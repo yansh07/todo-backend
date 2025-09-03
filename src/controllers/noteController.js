@@ -32,3 +32,12 @@ export const deleteNote = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+export async function getProfile(req, res) {
+  try {
+    if (!req.user) return res.status(404).json({ error: "User not found" });
+    return res.json(req.user);
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+}
