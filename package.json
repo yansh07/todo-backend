@@ -21,6 +21,7 @@
   "homepage": "https://github.com/yansh07/todo-backend#readme",
   "description": "",
   "dependencies": {
+    "async": "^3.2.6",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
