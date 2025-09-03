@@ -2,7 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import connectDB from "./config/db.js";
-import userRoutes from "./routes/userAuth.js";
+import userRoutes from "./routes/userAuth.js";  // only import from routes
 
 dotenv.config();
 const app = express();
@@ -10,7 +10,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.use("/user", userRoutes);
+// routes
+app.use("/api/user", userRoutes);
 
 // MongoDB connect
 connectDB();
