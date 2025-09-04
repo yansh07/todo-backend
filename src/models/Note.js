@@ -1,22 +1,22 @@
-import mongoose, { mongo } from "mongoose";
+import mongoose from "mongoose";
 
 const noteSchema = new mongoose.Schema(
   {
-    userID : {
-      type: mongoose.Schema.Types.ObjectId,
+    heading: {
+      type: String,
+      required: true,
+    },
+    description: {
+      type: String,
+      required: true,
+    },
+    label: {
+      type: String,
+      default: "general",
+    },
+    user: {
+      type: mongoose.Schema.Types.ObjectId, // 🔑 har note ek user ka hoga
       ref: "User",
-      required: true,
-    },
-    title: {
-      type: String,
-      required: true,
-    },
-    category :{
-      type: String,
-      default: "General",
-    },
-    content: {
-      type: String,
       required: true,
     },
   },
