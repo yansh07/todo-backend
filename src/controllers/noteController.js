@@ -3,12 +3,12 @@ import Note from "../models/Note.js";
 // 📌 Create new note
 export const createNote = async (req, res) => {
   try {
-    const { heading, description, label } = req.body;
+    const { title, category, content } = req.body;
 
     const note = await Note.create({
-      heading,
-      description,
-      label,
+      title,
+      category,
+      content,
       user: req.user._id, // ✅ middleware se mila user
     });
 
@@ -31,17 +31,19 @@ export const getNotes = async (req, res) => {
 // 📌 Update note
 export const updateNote = async (req, res) => {
   try {
-    const { id } = req.params;
-    const note = await Note.findOneAndUpdate(
-      { _id: id, user: req.user._id }, // ✅ sirf apna hi note update kar paaye
+    const updatedNote = await Note.findByIdAndUpdate(
+      req.params.id,
       req.body,
-      { new: true }
+      { new: true, runValidators: true } // 👈 new: true => updated doc return karega
     );
-    if (!note) return res.status(404).json({ error: "Note not found" });
 
-    res.json({ message: "Note updated", note });
+    if (!updatedNote) {
+      return res.status(404).json({ error: "Note not found" });
+    }
+
+    res.json(updatedNote);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Server error" });
   }
 };
 
