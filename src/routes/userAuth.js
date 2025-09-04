@@ -1,12 +1,11 @@
+//idhar sirf user ke routes honge
+
 import express from "express";
-import { createNote, getNotes, updateNote, deleteNote } from "../controllers/noteController.js";
-import authMiddleware from "../middleware/authMiddleware.js";
+import { userLogin, userSignup } from "../controllers/userAuth.js";
 
 const router = express.Router();
 
-router.post("/", authMiddleware, createNote);
-router.get("/", authMiddleware, getNotes);
-router.put("/:id", authMiddleware, updateNote);
-router.delete("/:id", authMiddleware, deleteNote);
+router.post("/register", userSignup);
+router.post("/login", userLogin);
 
 export default router;

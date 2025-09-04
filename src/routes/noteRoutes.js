@@ -1,12 +1,14 @@
+//sirf notes ke routes idhar honge
+
 import express from "express";
-import { getNotes, createNote, deleteNote } from "../controllers/noteController.js";
+import { createNote, getNotes, updateNote, deleteNote } from "../controllers/noteController.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// All notes API should be protected
-router.get("/", authMiddleware, getNotes);
 router.post("/", authMiddleware, createNote);
+router.get("/", authMiddleware, getNotes);
+router.put("/:id", authMiddleware, updateNote);
 router.delete("/:id", authMiddleware, deleteNote);
 
 export default router;
