@@ -1,43 +1,52 @@
 import Note from "../models/Note.js";
 
-// Get all notes
-export const getNotes = async (req, res) => {
+// Profile (example)
+export const getProfile = async (req, res) => {
   try {
-    const notes = await Note.find();
+    res.json(req.user); // middleware se user aaya hai
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Get notes for logged in user
+export async function getNotes(req, res) {
+  try {
+    const notes = await Note.find({ userId: req.user._id }).sort({ createdAt: -1 });
     res.json(notes);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
-};
+}
 
 // Create note
-export const createNote = async (req, res) => {
+export async function createNote(req, res) {
   try {
-    const { title, content } = req.body;
-    const newNote = new Note({ title, content });
-    await newNote.save();
-    res.status(201).json(newNote);
+    const { title, category, content } = req.body;
+
+    const note = await Note.create({
+      userId: req.user._id,
+      title,
+      category,   // frontend se category aa rahi hai (jaise template me hai)
+      content,
+    });
+
+    res.status(201).json({ message: "Note created", note });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
-};
+}
 
 // Delete note
-export const deleteNote = async (req, res) => {
+export async function deleteNote(req, res) {
   try {
     const { id } = req.params;
-    await Note.findByIdAndDelete(id);
-    res.json({ message: "Note deleted successfully" });
+
+    const note = await Note.findOneAndDelete({ _id: id, userId: req.user._id });
+    if (!note) return res.status(404).json({ error: "Note not found" });
+
+    res.json({ message: "Note deleted" });
   } catch (err) {
     res.status(500).json({ error: err.message });
-  }
-};
-
-export async function getProfile(req, res) {
-  try {
-    if (!req.user) return res.status(404).json({ error: "User not found" });
-    return res.json(req.user);
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
   }
 }
