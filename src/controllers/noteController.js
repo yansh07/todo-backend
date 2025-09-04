@@ -37,6 +37,27 @@ export async function createNote(req, res) {
   }
 }
 
+
+// Update note
+export const updateNote = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, category, content } = req.body;
+
+    const note = await Note.findOneAndUpdate(
+      { _id: id, userId: req.user._id },
+      { title, category, content },
+      { new: true }
+    );
+
+    if (!note) return res.status(404).json({ error: "Note not found" });
+    res.json({ message: "Note updated", note });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
 // Delete note
 export async function deleteNote(req, res) {
   try {

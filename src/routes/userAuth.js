@@ -1,12 +1,12 @@
 import express from "express";
-import { userSignup, userLogin } from "../controllers/userAuth.js";
-import { getProfile } from "../controllers/noteController.js";
-import authMiddleware from "../middleware/authMiddleware.js"
+import { createNote, getNotes, updateNote, deleteNote } from "../controllers/noteController.js";
+import authMiddleware from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router.post("/signup", userSignup);
-router.post("/login", userLogin)
-router.get("/profile", authMiddleware, getProfile)
+router.post("/", authMiddleware, createNote);
+router.get("/", authMiddleware, getNotes);
+router.put("/:id", authMiddleware, updateNote);
+router.delete("/:id", authMiddleware, deleteNote);
 
 export default router;
