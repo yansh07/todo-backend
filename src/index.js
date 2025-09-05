@@ -26,7 +26,7 @@ app.use(cors({
 app.use(express.json());
 
 // Fix route mounting - separate paths to avoid conflicts
-app.use("/api/auth", userAuthRoutes);  // Changed from /api/user to /api/auth
+app.use("/api/user", userAuthRoutes);  // Changed from /api/user to /api/auth
 app.use("/api/user", userRoutes);      // Keep this as /api/user
 app.use("/api/note", noteRoutes);
 
