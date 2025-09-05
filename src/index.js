@@ -11,39 +11,23 @@ import { fileURLToPath } from "url";
 dotenv.config();
 const app = express();
 
-// CORS must be BEFORE any routes
+// Single CORS configuration
 app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, curl, etc.)
-    if (!origin) return callback(null, true);
-    
-    const allowedOrigins = [
-      'https://planitfirst.vercel.app',
-      'http://localhost:3000',
-      'http://localhost:5173',
-      'http://localhost:5000',
-    ];
-    
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: [
+    'https://planitfirst.vercel.app',
+    'http://localhost:3000',
+    'http://localhost:5173'
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  optionsSuccessStatus: 200
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
-
-// Handle preflight requests
-app.options('*', cors());
 
 app.use(express.json());
 
-// routes
-app.use("/api/user", userAuthRoutes);
-app.use("/api/user", userRoutes);
+// Fix route mounting - separate paths to avoid conflicts
+app.use("/api/auth", userAuthRoutes);  // Changed from /api/user to /api/auth
+app.use("/api/user", userRoutes);      // Keep this as /api/user
 app.use("/api/note", noteRoutes);
 
 // profile pic
