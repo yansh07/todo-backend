@@ -3,8 +3,11 @@
 import express from "express";
 import { userLogin, userSignup } from "../controllers/userAuth.js";
 import authMiddleware from "../middleware/authMiddleware.js";
+import cors from "cors";
 
 const router = express.Router();
+
+router.use(cors()); // cors here
 
 router.post("/register", userSignup);
 router.post("/login", userLogin);

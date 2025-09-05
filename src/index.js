@@ -1,6 +1,6 @@
 import express from "express";
 import dotenv from "dotenv";
-import cors from "cors";
+// import cors from "cors";
 import connectDB from "./config/db.js";
 import userAuthRoutes from "./routes/userAuth.js";  // only import from routes
 // import Note from "./models/Note.js";
@@ -14,15 +14,13 @@ dotenv.config();
 const app = express();
 
 //middleware
-app.use(
-  cors({
-    origin: "https://planitfirst.vercel.app",
-  })
-);
+// app.use(
+//   cors()
+// );
 app.use(express.json());
 
 // routes
-app.use("/api/user", cors(), userAuthRoutes);
+app.use("/api/user", userAuthRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/note", noteRoutes);
 
