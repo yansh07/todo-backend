@@ -16,7 +16,11 @@ export const uploadProfilePic = async (req, res) => {
           { new: true }
         ).select("-password");
 
-        return res.json(user);
+        return res.json({
+            success: true,
+            message: "Profile picture updated",
+            user,
+        });
       }
     );
 

@@ -2,9 +2,13 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import connectDB from "./config/db.js";
-import userRoutes from "./routes/userAuth.js";  // only import from routes
+import userAuthRoutes from "./routes/userAuth.js";  // only import from routes
 // import Note from "./models/Note.js";
 import noteRoutes from "./routes/noteRoutes.js"
+import userRoutes from "./routes/user.js"
+import path from "path";
+import { fileURLToPath } from "url";
+
 
 dotenv.config();
 const app = express();
@@ -14,8 +18,15 @@ app.use(cors());
 app.use(express.json());
 
 // routes
+app.use("/api/user", userAuthRoutes);
 app.use("/api/user", userRoutes);
-app.use("/api/note", noteRoutes)
+app.use("/api/note", noteRoutes);
+
+//profile pic
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
 
 // MongoDB connect
 connectDB();

@@ -1,9 +1,10 @@
 import { v2 as cloudinary } from "cloudinary";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
-import { configDotenv } from "dotenv";
+import dotenv from "dotenv";
 
-dotenv.config()
-//cloudinary config
+dotenv.config();
+
+// Cloudinary config
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -16,11 +17,11 @@ const storage = new CloudinaryStorage({
     folder: "user_profile",
     allowed_formats: ["jpeg", "png", "jpg"],
     transformation: [
-      { width: 300, height: 300, crop: "limit" }, // Resize
+      { width: 300, height: 300, crop: "limit" },
       { quality: "auto" },
       { fetch_format: "auto" },
     ],
   },
 });
 
-export {cloudinary, storage};
+export { cloudinary, storage };
