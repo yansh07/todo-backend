@@ -1,22 +1,29 @@
 import express from "express";
 import dotenv from "dotenv";
-// import cors from "cors";
+import cors from "cors";
 import connectDB from "./config/db.js";
-import userAuthRoutes from "./routes/userAuth.js";  // only import from routes
-// import Note from "./models/Note.js";
+import userAuthRoutes from "./routes/userAuth.js";
 import noteRoutes from "./routes/noteRoutes.js"
 import userRoutes from "./routes/user.js"
 import path from "path";
 import { fileURLToPath } from "url";
 
-
 dotenv.config();
 const app = express();
 
-//middleware
-// app.use(
-//   cors()
-// );
+// CORS configuration - THIS IS THE KEY FIX
+app.use(cors({
+  origin: [
+    'https://planitfirst.vercel.app',
+    'http://localhost:5000',
+    'http://localhost:5173'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// middleware
 app.use(express.json());
 
 // routes
@@ -24,11 +31,10 @@ app.use("/api/user", userAuthRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/note", noteRoutes);
 
-//profile pic
+// profile pic
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-
 
 // MongoDB connect
 connectDB();
