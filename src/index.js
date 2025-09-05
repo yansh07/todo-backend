@@ -11,20 +11,34 @@ import { fileURLToPath } from "url";
 dotenv.config();
 const app = express();
 
-// CORS configuration - THIS IS THE KEY FIX
+// CORS must be BEFORE any routes
 app.use(cors({
-  origin: [
-    'https://planitfirst.vercel.app',
-    'http://localhost:5000',
-    'http://localhost:5173',
-    'http://localhost:3000'
-  ],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = [
+      'https://planitfirst.vercel.app',
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'http://localhost:5000',
+    ];
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  optionsSuccessStatus: 200
 }));
 
-// middleware
+// Handle preflight requests
+app.options('*', cors());
+
 app.use(express.json());
 
 // routes

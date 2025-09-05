@@ -8,6 +8,7 @@ const router = express.Router();
 // Remove this line: router.use(cors());
 
 router.post("/register", userSignup);
+router.post("/signup", userSignup);
 router.post("/login", userLogin);
 
 router.get("/profile", authMiddleware, async (req, res) => {
