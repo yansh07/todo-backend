@@ -1,10 +1,12 @@
-import express from express;
-import upload from "../config/cloudinary.js";
-import { uploadProfilePic } from "../controllers/userController.js";
-import authMiddleware from "../middleware/authMiddleware.js"
+import express from "express";
+import authMiddleware from "../middleware/authMiddleware.js";
+import upload from "../utils/multer.js";
+import { uploadProfilePic, updateBio, getProfile } from "../controllers/userController.js";
 
 const router = express.Router();
 
-router.post("/profile-pic", upload.single("profilePic"), uploadProfilePic)
+router.get("/profile", authMiddleware, getProfile);
+router.put("/bio", authMiddleware, updateBio);
+router.post("/profile-pic", authMiddleware, upload.single("profilePic"), uploadProfilePic);
 
 export default router;
