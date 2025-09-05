@@ -5,7 +5,7 @@ import authMiddleware from "../middleware/authMiddleware.js";
 const router = express.Router();
 
 // Make sure these routes are simple strings
-router.post("/register", userSignup);
+// router.post("/register", userSignup);
 router.post("/signup", userSignup);
 router.post("/login", userLogin);
 router.get("/profile", authMiddleware, async (req, res) => {
