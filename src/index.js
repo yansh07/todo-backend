@@ -15,7 +15,7 @@ const app = express();
 app.use(cors({
   origin: [
     'https://planitfirst.vercel.app',
-    'http://localhost:3000',
+    'http://localhost:5000',
     'http://localhost:5173'
   ],
   credentials: true,
