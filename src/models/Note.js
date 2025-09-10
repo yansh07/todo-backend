@@ -23,5 +23,7 @@ const noteSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+noteSchema.index({category:1});
+
 const Note = mongoose.model("Note", noteSchema);
 export default Note;

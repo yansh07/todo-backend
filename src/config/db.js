@@ -4,10 +4,7 @@ const connectDB = async () => {
   try {
     const uri = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/notesdb";
 
-    await mongoose.connect(uri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    await mongoose.connect(uri);
 
     console.log("✅ MongoDB connected:", uri.includes("localhost") ? "Local DB" : "Atlas/Prod DB");
   } catch (error) {
