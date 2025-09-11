@@ -46,6 +46,35 @@ export const updateBio = async (req, res) => {
   }
 };
 
+// 📌 New: Update profile (including about field)
+export const updateProfile = async (req, res) => {
+  try {
+    const { fullName, about, bio } = req.body;
+    
+    const updateData = {};
+    if (fullName !== undefined) updateData.fullName = fullName;
+    if (about !== undefined) updateData.about = about.slice(0, 150); // Ensure max 150 chars
+    if (bio !== undefined) updateData.bio = bio;
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user._id,
+      updateData,
+      { 
+        new: true, 
+        runValidators: true 
+      }
+    ).select("-password");
+
+    if (!updatedUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json(updatedUser);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 export const getProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select("-password");

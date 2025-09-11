@@ -28,6 +28,34 @@ export const getNotes = async (req, res) => {
   }
 };
 
+// 📌 Search notes by title or category
+export const searchNotes = async (req, res) => {
+  try {
+    const { query } = req.query;
+    
+    if (!query || query.trim() === '') {
+      // If no search query, return all notes
+      const notes = await Note.find({ user: req.user._id }).sort({ createdAt: -1 });
+      return res.json(notes);
+    }
+
+    // Search in title and category using case-insensitive regex
+    const searchRegex = new RegExp(query.trim(), 'i');
+    
+    const notes = await Note.find({
+      user: req.user._id,
+      $or: [
+        { title: { $regex: searchRegex } },
+        { category: { $regex: searchRegex } }
+      ]
+    }).sort({ createdAt: -1 });
+
+    res.json(notes);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 // 📌 Update note
 export const updateNote = async (req, res) => {
   try {
