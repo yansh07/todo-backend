@@ -12,7 +12,9 @@ router.post("/login", userLogin);
 // Profile routes
 router.get("/profile", authMiddleware, async (req, res) => {
   try {
-    res.json(req.user);
+    // 🔥 Fetch fresh user data from database instead of using req.user
+    const user = await User.findById(req.user._id).select("-password");
+    res.json(user);
   } catch (err) {
     res.status(500).json({ error: "Server error" });
   }

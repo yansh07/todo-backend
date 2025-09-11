@@ -1,58 +1,54 @@
-// Example Express route for profile pic upload
 import express from "express";
-import multer from "multer";
+import { userLogin, userSignup } from "../controllers/userAuth.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 import User from "../models/User.js";
-// import authMiddleware from "../middleware/authMiddleware.js";
-import upload from "../middleware/upload.js";
 
 const router = express.Router();
 
-// multer setup
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "uploads/"); // make sure uploads/ folder exists
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + "-" + file.originalname);
-  },
-});
-// const upload = multer({ storage });
+// Auth routes
+router.post("/signup", userSignup);
+router.post("/login", userLogin);
 
-// Upload profile pic route
-router.post(
-  "/profile-pic",
-  authMiddleware,
-  upload.single("profilePic"),
-  async (req, res) => {
-    try {
-      if (!req.file) {
-        return res.status(400).json({ success: false, error: "No file uploaded" });
-      }
-
-      // Update user's profilePic in DB
-      const user = await User.findById(req.user._id);
-      user.profilePic = req.file.path; // Cloudinary gives url in file.path
-      await user.save();
-
-      res.json({ success: true, user });
-    } catch (err) {
-      console.error("Upload error:", err.message);
-      res.status(500).json({ success: false, error: "Server error" });
-    }
-  }
-);
-
-// Get logged-in user
-router.get("/me", authMiddleware, async (req, res) => {
+// Profile routes
+router.get("/profile", authMiddleware, async (req, res) => {
   try {
+    // 🔥 Fetch fresh user data from database instead of using req.user
     const user = await User.findById(req.user._id).select("-password");
     res.json(user);
   } catch (err) {
-    console.error("Fetch user error:", err.message);
     res.status(500).json({ error: "Server error" });
   }
 });
 
+// 📌 Profile update route (inline implementation)
+router.put("/profile", authMiddleware, async (req, res) => {
+  try {
+    const { fullName, about, bio } = req.body;
+    
+    const updateData = {};
+    if (fullName !== undefined) updateData.fullName = fullName;
+    
+    // 🔥 FIX: Map 'about' field to 'bio' in database
+    if (about !== undefined) updateData.bio = about.slice(0, 150);
+    if (bio !== undefined) updateData.bio = bio.slice(0, 150);
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user._id,
+      updateData,
+      { 
+        new: true, 
+        runValidators: true 
+      }
+    ).select("-password");
+
+    if (!updatedUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json(updatedUser);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 export default router;
