@@ -31,21 +31,6 @@ export const uploadProfilePic = async (req, res) => {
   }
 };
 
-export const updateBio = async (req, res) => {
-  try {
-    const { bio } = req.body;
-    const user = await User.findByIdAndUpdate(
-      req.user._id,
-      { bio },
-      { new: true }
-    ).select("-password");
-
-    return res.json(user);
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
-  }
-};
-
 // 📌 New: Update profile (including about field)
 export const updateProfile = async (req, res) => {
   try {

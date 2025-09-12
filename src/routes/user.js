@@ -28,7 +28,6 @@ router.put("/profile", authMiddleware, async (req, res) => {
     const updateData = {};
     if (fullName !== undefined) updateData.fullName = fullName;
     
-    // 🔥 FIX: Map 'about' field to 'bio' in database
     if (about !== undefined) updateData.bio = about.slice(0, 150);
     if (bio !== undefined) updateData.bio = bio.slice(0, 150);
 

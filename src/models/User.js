@@ -18,7 +18,7 @@ const userSchema = new mongoose.Schema({
     type: String, // Cloudinary ka image URL
     default: "", 
   },
-  bio: {
+  about: {
     type: String, 
     maxlength: 150, // word limit 150 words
     default: "",
