@@ -1,8 +1,6 @@
-//sirf notes ke routes idhar honge
-
 import express from "express";
+import { authMiddleware } from "../middleware/authMiddleware.js";
 import { createNote, getNotes, updateNote, deleteNote, searchNotes } from "../controllers/noteController.js";
-import authMiddleware from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 

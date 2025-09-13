@@ -10,9 +10,11 @@ const userSchema = new mongoose.Schema({
     required: true,
     unique: true, // ensures no duplicate emails
   },
-  password: {
+  // 📌 This is the unique identifier from Auth0
+  auth0Id: {
     type: String,
     required: true,
+    unique: true,
   },
   profilePic: {
     type: String, // Cloudinary ka image URL

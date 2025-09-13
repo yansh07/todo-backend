@@ -62,7 +62,10 @@ export const updateProfile = async (req, res) => {
 
 export const getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select("-password");
+    const auth0Id = req.auth.payload.sub;
+    
+    const user = await User.findOne({ auth0Id: auth0Id }).select("-password");
+    
     return res.json(user);
   } catch (err) {
     return res.status(500).json({ error: err.message });

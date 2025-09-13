@@ -1,52 +1,48 @@
 import express from "express";
-import { userLogin, userSignup } from "../controllers/userAuth.js";
-import authMiddleware from "../middleware/authMiddleware.js";
+import { authMiddleware } from "../middleware/authMiddleware.js";
 import User from "../models/User.js";
 
 const router = express.Router();
 
-// Auth routes
-router.post("/signup", userSignup);
-router.post("/login", userLogin);
-
-// Profile routes
-router.get("/profile", authMiddleware, async (req, res) => {
+router.post("/verify-user", authMiddleware, async (req, res) => {
   try {
-    // 🔥 Fetch fresh user data from database instead of using req.user
-    const user = await User.findById(req.user._id).select("-password");
-    res.json(user);
-  } catch (err) {
-    res.status(500).json({ error: "Server error" });
-  }
-});
+    const auth0Id = req.auth.payload.sub;
+    const { email, name, picture } = req.body;
 
-// 📌 Profile update route (inline implementation)
-router.put("/profile", authMiddleware, async (req, res) => {
-  try {
-    const { fullName, about, bio } = req.body;
-    
-    const updateData = {};
-    if (fullName !== undefined) updateData.fullName = fullName;
-    
-    if (about !== undefined) updateData.bio = about.slice(0, 150);
-    if (bio !== undefined) updateData.bio = bio.slice(0, 150);
+    // 1. Try to find the user by their unique Auth0 ID
+    let user = await User.findOne({ auth0Id });
 
-    const updatedUser = await User.findByIdAndUpdate(
-      req.user._id,
-      updateData,
-      { 
-        new: true, 
-        runValidators: true 
-      }
-    ).select("-password");
-
-    if (!updatedUser) {
-      return res.status(404).json({ error: "User not found" });
+    if (user) {
+      // If found, perfect. Just return the user.
+      return res.json(user);
     }
 
-    res.json(updatedUser);
+    // 2. If not found, maybe they exist from a previous setup? Let's check by email.
+    let userByEmail = await User.findOne({ email });
+
+    if (userByEmail) {
+      // User with this email exists! Let's link their Auth0 ID to this account.
+      console.log(`User found by email, linking Auth0 ID...`);
+      userByEmail.auth0Id = auth0Id;
+      userByEmail.profilePic = picture; // Also update their picture
+      await userByEmail.save();
+      return res.json(userByEmail);
+    }
+
+    // 3. If no user is found by auth0Id OR email, this is a brand new user. Create them.
+    console.log("No user found, creating a brand new one...");
+    const newUser = new User({
+      auth0Id,
+      email,
+      fullName: name,
+      profilePic: picture,
+    });
+    await newUser.save();
+    return res.json(newUser);
+
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error in /verify-user:", err);
+    res.status(500).json({ error: "Server error during user verification" });
   }
 });
 
