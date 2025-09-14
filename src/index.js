@@ -9,48 +9,76 @@ import { fileURLToPath } from "url";
 dotenv.config();
 const app = express();
 
+// Middleware order is important!
+app.use(express.json());
+
+// Enhanced CORS middleware
 app.use((req, res, next) => {
-  // We explicitly set the ONLY allowed origin.
-  res.setHeader('Access-Control-Allow-Origin', 'https://planitfirst.vercel.app');
+  const origin = 'https://planitfirst.vercel.app';
   
-  // We set the allowed methods.
+  // Log incoming requests for debugging
+  console.log(`${req.method} ${req.url} from origin: ${req.headers.origin}`);
+  
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', origin);
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  
-  // We set the allowed headers.
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  
-  // We allow credentials.
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
+  res.setHeader('Access-Control-Max-Age', '86400'); // 24 hours
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   
+  // Handle preflight
   if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
+    console.log('Handling OPTIONS preflight request');
+    return res.status(204).end();
   }
-
+  
   next();
 });
 
-app.use(express.json());
-
+// Routes
 app.use("/api/user", userRoutes);
 app.use("/api/note", noteRoutes);
 
-// --- 5. Other Stuff ---
+// Static files
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-connectDB();
+// Database connection
+await connectDB();
 
+// Health check route
 app.get("/", (req, res) => {
-  res.send("Backend is alive. CORS has been defeated. 🚀");
+  res.json({ 
+    status: 'healthy',
+    cors: 'enabled',
+    timestamp: new Date().toISOString()
+  });
 });
 
+// Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).send('Something broke!');
+  console.error('Error details:', {
+    method: req.method,
+    path: req.path,
+    origin: req.headers.origin,
+    error: err.message
+  });
+  
+  res.status(500).json({
+    error: 'Internal server error',
+    message: err.message
+  });
 });
 
+// Server startup
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`✅✅✅ Server listening on port ${PORT}. The curse is broken. You are free. ✅✅✅`);
+  console.log(`
+=== Server Started ===
+🚀 Port: ${PORT}
+🌍 CORS Origin: https://planitfirst.vercel.app
+🔒 Environment: ${process.env.NODE_ENV}
+===================
+  `);
 });
