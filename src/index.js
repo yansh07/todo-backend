@@ -27,28 +27,35 @@ app.options("*", cors());
 
 app.use(express.json());
 
-// ✅ ADD AUTH0 MIDDLEWARE CONFIGURATION
+// profile pic
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+// Auth middleware
 const jwtCheck = auth({
   audience: process.env.AUTH0_AUDIENCE,
   issuerBaseURL: process.env.AUTH0_ISSUER_BASE_URL,
   tokenSigningAlg: 'RS256'
 });
 
-// Apply auth middleware to protected routes
+// Protected routes
 app.use("/api/user", jwtCheck, userRoutes);      
 app.use("/api/note", jwtCheck, noteRoutes);      
 
-// profile pic
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+// Public route should be last
+app.get("/", (req, res) => {
+  res.send("Backend is running 🚀");
+});
 
 // MongoDB connect
 connectDB();
 
-// Public route (no auth required)
-app.get("/", (req, res) => {
-  res.send("Backend is running 🚀");
+// Log errors and request path
+app.use((err, req, res, next) => {
+  console.error('Path:', req.path);
+  console.error('Error:', err);
+  next(err);
 });
 
 // Error handler
