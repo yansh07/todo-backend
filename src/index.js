@@ -12,24 +12,40 @@ dotenv.config();
 const app = express();
 
 // --- 1. Enhanced CORS Configuration ---
+const whitelist = ['https://planitfirst.vercel.app', 'http://localhost:5173'];
+
 const corsOptions = {
-  origin: ['https://planitfirst.vercel.app', 'http://localhost:5173'],
+  origin: function (origin, callback) {
+    if (!origin || whitelist.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   credentials: true,
+  maxAge: 86400, // 24 hours
   preflightContinue: false,
   optionsSuccessStatus: 204
 };
 
-// Apply CORS middleware
+// Apply CORS first
 app.use(cors(corsOptions));
 
-// Handle OPTIONS preflight requests
+// Handle preflight requests
 app.options('*', cors(corsOptions));
 
 // --- 2. STANDARD MIDDLEWARE ---
 // This comes AFTER CORS.
 app.use(express.json());
+
+// Debug middleware - log all requests
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`);
+  console.log('Headers:', JSON.stringify(req.headers, null, 2));
+  next();
+});
 
 // --- 3. YOUR API ROUTES ---
 // The auth middleware is already inside these route files, which is perfect.
@@ -49,12 +65,20 @@ app.get("/", (req, res) => {
 
 // --- 4. Enhanced Error Handler ---
 app.use((err, req, res, next) => {
-  console.error('Error details:', {
-    method: req.method,
-    path: req.path,
+  console.error('Error:', {
+    message: err.message,
     origin: req.headers.origin,
-    error: err.message
+    path: req.path,
+    method: req.method
   });
+  
+  if (err.message === 'Not allowed by CORS') {
+    return res.status(403).json({
+      error: 'CORS Error',
+      message: `Origin ${req.headers.origin} not allowed`
+    });
+  }
+  
   res.status(500).json({ 
     error: 'Internal server error',
     message: err.message 
