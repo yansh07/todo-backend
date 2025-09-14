@@ -1,41 +1,46 @@
 import Note from "../models/Note.js";
 import User from "../models/User.js"; 
 
+// 🔹 Helper function: find user by Auth0 ID
+const getUserFromAuth = async (auth0Id) => {
+  return await User.findOne({ auth0Id });
+};
+
 // 📌 Create new note
 export const createNote = async (req, res) => {
   try {
     const { title, category, content } = req.body;
     const auth0Id = req.auth.payload.sub;
 
-    const user = await User.findOne({ auth0Id });
-    if (!user) {
-      return res.status(404).json({ error: "User profile not found in database." });
-    }
+    const user = await getUserFromAuth(auth0Id);
+    if (!user) return res.status(404).json({ error: "User profile not found." });
 
     const newNote = await Note.create({
       title,
       category,
       content,
-      user: user._id, // Use the MongoDB _id
+      user: user._id,
     });
 
     res.status(201).json({ message: "Note created successfully", note: newNote });
   } catch (err) {
-    console.error("Error creating note:", err);
-    res.status(500).json({ error: "Failed to create note on server." });
+    console.error("❌ Error creating note:", err);
+    res.status(500).json({ error: "Server error while creating note." });
   }
 };
+
 // 📌 Get all notes for logged-in user
 export const getNotes = async (req, res) => {
   try {
     const auth0Id = req.auth.payload.sub;
-    const user = await User.findOne({ auth0Id });
+    const user = await getUserFromAuth(auth0Id);
     if (!user) return res.status(404).json({ error: "User not found" });
 
     const notes = await Note.find({ user: user._id }).sort({ createdAt: -1 });
     res.json(notes);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("❌ Error fetching notes:", err);
+    res.status(500).json({ error: "Server error while fetching notes." });
   }
 };
 
@@ -44,71 +49,74 @@ export const searchNotes = async (req, res) => {
   try {
     const { query } = req.query;
     const auth0Id = req.auth.payload.sub;
-    
-    const user = await User.findOne({ auth0Id });
+
+    const user = await getUserFromAuth(auth0Id);
     if (!user) return res.status(404).json({ error: "User not found" });
 
+    let notes;
     if (!query || query.trim() === '') {
-      const notes = await Note.find({ user: user._id }).sort({ createdAt: -1 });
-      return res.json(notes);
+      notes = await Note.find({ user: user._id }).sort({ createdAt: -1 });
+    } else {
+      const searchRegex = new RegExp(query.trim(), 'i');
+      notes = await Note.find({
+        user: user._id,
+        $or: [
+          { title: { $regex: searchRegex } },
+          { category: { $regex: searchRegex } }
+        ]
+      }).sort({ createdAt: -1 });
     }
-
-    const searchRegex = new RegExp(query.trim(), 'i');
-    
-    const notes = await Note.find({
-      user: user._id, // Use the correct user ID
-      $or: [
-        { title: { $regex: searchRegex } },
-        { category: { $regex: searchRegex } }
-      ]
-    }).sort({ createdAt: -1 });
 
     res.json(notes);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("❌ Error searching notes:", err);
+    res.status(500).json({ error: "Server error while searching notes." });
   }
 };
+
 // 📌 Update note
 export const updateNote = async (req, res) => {
   try {
-    const noteId = req.params.id;
+    const { id } = req.params;
     const auth0Id = req.auth.payload.sub;
 
-    const user = await User.findOne({ auth0Id });
+    const user = await getUserFromAuth(auth0Id);
     if (!user) return res.status(404).json({ error: "User not found" });
 
     const updatedNote = await Note.findOneAndUpdate(
-      { _id: noteId, user: user._id }, // Query by note ID AND user's MongoDB ID
+      { _id: id, user: user._id },
       req.body,
       { new: true, runValidators: true }
     );
 
     if (!updatedNote) {
-      return res.status(404).json({ error: "Note not found or you don't have permission" });
+      return res.status(404).json({ error: "Note not found or unauthorized" });
     }
 
-    res.json(updatedNote);
+    res.json({ message: "Note updated successfully", note: updatedNote });
   } catch (err) {
-    res.status(500).json({ error: "Server error" });
+    console.error("❌ Error updating note:", err);
+    res.status(500).json({ error: "Server error while updating note." });
   }
 };
 
 // 📌 Delete note
 export const deleteNote = async (req, res) => {
   try {
-    const noteId = req.params.id;
+    const { id } = req.params;
     const auth0Id = req.auth.payload.sub;
 
-    const user = await User.findOne({ auth0Id });
+    const user = await getUserFromAuth(auth0Id);
     if (!user) return res.status(404).json({ error: "User not found" });
-    
-    const note = await Note.findOneAndDelete({ _id: noteId, user: user._id });
+
+    const note = await Note.findOneAndDelete({ _id: id, user: user._id });
     if (!note) {
-        return res.status(404).json({ error: "Note not found or you don't have permission" });
+      return res.status(404).json({ error: "Note not found or unauthorized" });
     }
 
-    res.json({ message: "Note deleted" });
-  } catch (err) { 
-    res.status(500).json({ error: err.message });
+    res.json({ message: "Note deleted successfully" });
+  } catch (err) {
+    console.error("❌ Error deleting note:", err);
+    res.status(500).json({ error: "Server error while deleting note." });
   }
 };

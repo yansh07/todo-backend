@@ -6,10 +6,12 @@ import {
   deleteNote, 
   searchNotes 
 } from "../controllers/noteController.js";
+import authMiddleware from "../middleware/authMiddleware.js"; 
 
 const router = express.Router();
 
-// Define routes
+// Protect all note routes
+router.use(authMiddleware);   
 router.route("/")
   .post(createNote)
   .get(getNotes);
