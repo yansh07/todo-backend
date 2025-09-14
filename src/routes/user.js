@@ -1,3 +1,4 @@
+console.log(">>> ROUTES/USER.JS LOADED: LATEST VERSION <<<");
 import express from "express";
 import { authMiddleware } from "../middleware/authMiddleware.js";
 import User from "../models/User.js";

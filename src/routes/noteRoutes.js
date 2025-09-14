@@ -1,3 +1,4 @@
+console.log(">>> ROUTES/NOTEROUTES.JS LOADED: LATEST VERSION <<<");
 import express from "express";
 import { authMiddleware } from "../middleware/authMiddleware.js";
 import { createNote, getNotes, updateNote, deleteNote, searchNotes } from "../controllers/noteController.js";

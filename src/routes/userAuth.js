@@ -1,3 +1,4 @@
+console.log(">>> GHOST DETECTED! THE OLD USERAUTH.JS FILE IS STILL BEING LOADED!!! <<<");
 // import express from "express";
 // import { authMiddleware } from "../middleware/authMiddleware.js";
 // import User from "../models/User.js";
