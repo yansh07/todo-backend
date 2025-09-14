@@ -11,19 +11,36 @@ import { fileURLToPath } from "url";
 dotenv.config();
 const app = express();
 
-// --- 2. THE ONLY CORS SETUP YOU WILL EVER NEED ---
-// This must be the VERY FIRST middleware. Before anything else.
+// --- 1. Enhanced CORS Configuration ---
 const corsOptions = {
-  origin: 'https://planitfirst.vercel.app', // Only allow your Vercel app
+  origin: ['https://planitfirst.vercel.app', 'http://localhost:5173'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 };
+
+// Apply CORS middleware
 app.use(cors(corsOptions));
 
-// --- 3. STANDARD MIDDLEWARE ---
+// Handle OPTIONS preflight requests
+app.options('*', cors(corsOptions));
+
+// Additional headers middleware
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', 'https://planitfirst.vercel.app');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  next();
+});
+
+// --- 2. STANDARD MIDDLEWARE ---
 // This comes AFTER CORS.
 app.use(express.json());
 
-// --- 4. YOUR API ROUTES ---
+// --- 3. YOUR API ROUTES ---
 // The auth middleware is already inside these route files, which is perfect.
 app.use("/api/user", userRoutes);
 app.use("/api/note", noteRoutes);
@@ -39,10 +56,18 @@ app.get("/", (req, res) => {
   res.send("Backend is running 🚀");
 });
 
-// --- 6. ERROR HANDLER ---
+// --- 4. Enhanced Error Handler ---
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).send('Something broke!');
+  console.error('Error details:', {
+    method: req.method,
+    path: req.path,
+    origin: req.headers.origin,
+    error: err.message
+  });
+  res.status(500).json({ 
+    error: 'Internal server error',
+    message: err.message 
+  });
 });
 
 // --- 7. START SERVER ---
