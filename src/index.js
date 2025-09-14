@@ -1,36 +1,56 @@
 import express from "express";
-import cors from "cors";
 import dotenv from "dotenv";
-import connectDB from "./config/db.js"
+import connectDB from "./config/db.js";
+import noteRoutes from "./routes/noteRoutes.js";
 import userRoutes from "./routes/user.js";
+import path from "path";
+import { fileURLToPath } from "url";
 
 dotenv.config();
 const app = express();
 
-const allowedOrigins = [
-  "https://planitfirst.vercel.app",
-  "http://localhost:5173"
-];
+app.use((req, res, next) => {
+  // We explicitly set the ONLY allowed origin.
+  res.setHeader('Access-Control-Allow-Origin', 'https://planitfirst.vercel.app');
+  
+  // We set the allowed methods.
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  
+  // We set the allowed headers.
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  
+  // We allow credentials.
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
 
-app.use(
-  cors({
-    origin: allowedOrigins,
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"]
-  })
-);
+  next();
+});
 
-app.set("trust proxy", 1);
 app.use(express.json());
-app.options("*", cors());
 
-// ✅ Routes
 app.use("/api/user", userRoutes);
+app.use("/api/note", noteRoutes);
 
-const PORT = process.env.PORT || 8080;
-connectDB().then(() => {
-  app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-  });
+// --- 5. Other Stuff ---
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+connectDB();
+
+app.get("/", (req, res) => {
+  res.send("Backend is alive. CORS has been defeated. 🚀");
+});
+
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Something broke!');
+});
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`✅✅✅ Server listening on port ${PORT}. The curse is broken. You are free. ✅✅✅`);
 });
