@@ -2,7 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import connectDB from "./config/db.js";
-import userAuthRoutes from "./routes/userAuth.js";
+// import userAuthRoutes from "./routes/userAuth.js";
 import noteRoutes from "./routes/noteRoutes.js"
 import userRoutes from "./routes/user.js"
 import path from "path";
