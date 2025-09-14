@@ -8,19 +8,22 @@ import noteRoutes from "./routes/noteRoutes.js"
 dotenv.config();
 const app = express();
 
-const allowedOrigin = "https://planitfirst.vercel.app";
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "https://localhost:5000",
+  "https://planitfirst.vercel.app"
+];
 
 app.use(
   cors({
-    origin: allowedOrigin,
-    credentials: true,
-  })
-);
-
-app.options(
-  "*",
-  cors({
-    origin: allowedOrigin,
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   })
 );
