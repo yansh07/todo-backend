@@ -12,89 +12,83 @@ import { auth } from 'express-oauth2-jwt-bearer';
 dotenv.config();
 const app = express();
 
-// ✅ 1. Handle OPTIONS requests FIRST (before auth middleware)
-app.options('*', cors({
-  origin: ['https://planitfirst.vercel.app', 'http://localhost:5173'],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Origin', 'Accept']
-}));
-
-// ✅ 2. Add manual CORS headers for all responses
+// ✅ 1. MANUAL CORS MIDDLEWARE - Handle ALL requests first
 app.use((req, res, next) => {
   const allowedOrigins = ['https://planitfirst.vercel.app', 'http://localhost:5173'];
   const origin = req.headers.origin;
   
   if (allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Origin', origin);
   }
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Origin, Accept');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Origin, Accept');
+  
+  // ✅ Handle OPTIONS requests immediately
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
   next();
 });
 
-// ✅ 3. Regular CORS middleware
-app.use(cors({
-  origin: ['https://planitfirst.vercel.app', 'http://localhost:5173'],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Origin', 'Accept']
-}));
-
+// ✅ 2. Regular middleware
 app.use(express.json());
 
-// profile pic
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-
-// Auth middleware
+// ✅ 3. Auth middleware - but only for non-OPTIONS requests
 const jwtCheck = auth({
   audience: process.env.AUTH0_AUDIENCE,
   issuerBaseURL: process.env.AUTH0_ISSUER_BASE_URL,
   tokenSigningAlg: 'RS256'
 });
 
-// ✅ 4. Create auth middleware that skips OPTIONS requests
-const authUnlessOptions = (req, res, next) => {
+// ✅ 4. Custom auth middleware that skips OPTIONS
+const optionalAuth = (req, res, next) => {
   if (req.method === 'OPTIONS') {
-    return next(); // Skip auth for OPTIONS requests
+    return next(); // Skip auth for OPTIONS
   }
+  
+  // Check if authorization header exists
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // For some public routes, you might want to allow without auth
+    // For now, we'll require auth for all API routes
+    return res.status(401).json({ error: 'Authorization required' });
+  }
+  
   jwtCheck(req, res, next);
 };
 
-// Mount routes with the modified auth middleware
+// ✅ 5. Mount routes with optional auth
 console.log("Mounting user routes at /api/user");
-app.use("/api/user", authUnlessOptions, userRoutes);      
+app.use("/api/user", optionalAuth, userRoutes);      
 
 console.log("Mounting note routes at /api/note");
-app.use("/api/note", authUnlessOptions, noteRoutes);      
+app.use("/api/note", optionalAuth, noteRoutes);      
 
-// Public route
+// ✅ 6. Static files (no auth needed)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+// ✅ 7. Public routes (no auth needed)
 app.get("/", (req, res) => {
   res.send("Backend is running 🚀");
 });
 
-// MongoDB connect
+// ✅ 8. MongoDB connection
 connectDB();
 
-// Request logging
+// ✅ 9. Request logging
 app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
   next();
 });
 
-// Error handlers
+// ✅ 10. Error handling
 app.use((err, req, res, next) => {
-  console.error('Error Details:', {
-    method: req.method,
-    path: req.path,
-    errorName: err.name,
-    errorMessage: err.message
-  });
-  
-  res.status(500).json({
+  console.error('Error:', err.message);
+  res.status(err.status || 500).json({
     error: 'Internal server error',
     message: err.message
   });
