@@ -3,12 +3,11 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import connectDB from "./config/db.js";
-// import userAuthRoutes from "./routes/userAuth.js";
 import noteRoutes from "./routes/noteRoutes.js"
 import userRoutes from "./routes/user.js"
 import path from "path";
 import { fileURLToPath } from "url";
-
+import { auth } from 'express-oauth2-jwt-bearer';
 
 dotenv.config();
 const app = express();
@@ -28,9 +27,16 @@ app.options("*", cors());
 
 app.use(express.json());
 
-// Fix route mounting - separate paths to avoid conflicts
-app.use("/api/user", userRoutes);      
-app.use("/api/note", noteRoutes);
+// ✅ ADD AUTH0 MIDDLEWARE CONFIGURATION
+const jwtCheck = auth({
+  audience: process.env.AUTH0_AUDIENCE,
+  issuerBaseURL: process.env.AUTH0_ISSUER_BASE_URL,
+  tokenSigningAlg: 'RS256'
+});
+
+// Apply auth middleware to protected routes
+app.use("/api/user", jwtCheck, userRoutes);      
+app.use("/api/note", jwtCheck, noteRoutes);      
 
 // profile pic
 const __filename = fileURLToPath(import.meta.url);
@@ -40,6 +46,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 // MongoDB connect
 connectDB();
 
+// Public route (no auth required)
 app.get("/", (req, res) => {
   res.send("Backend is running 🚀");
 });
