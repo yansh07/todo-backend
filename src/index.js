@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import connectDB from "./config/db.js";
 import userRoutes from "./routes/user.js";
+import noteRoutes from "./routes/noteRoutes.js"
 
 dotenv.config();
 const app = express();
@@ -28,6 +29,7 @@ app.use(express.json());
 
 // Routes
 app.use("/api/user", userRoutes);
+app.use("/api/note", noteRoutes)
 
 const PORT = process.env.PORT || 5000;
 connectDB().then(() => {
