@@ -11,17 +11,17 @@ const authMiddleware = auth({
 });
 
 //  to decode the token and get the user's ID
-const getUserFromToken = async (req, res, next) => {
-  try {
-    const token = req.headers.authorization.split(' ')[1];
-    const decodedToken = jwt.decode(token);
+// const getUserFromToken = async (req, res, next) => {
+//   try {
+//     const token = req.headers.authorization.split(' ')[1];
+//     const decodedToken = jwt.decode(token);
     
-    // The 'sub' field is the user ID in Auth0
-    req.user = decodedToken.sub;
-    next();
-  } catch (err) {
-    res.status(401).send("Unauthorized");
-  }
-};
+//     // The 'sub' field is the user ID in Auth0
+//     req.user = decodedToken.sub;
+//     next();
+//   } catch (err) {
+//     res.status(401).send("Unauthorized");
+//   }
+// };
 
-export { authMiddleware, getUserFromToken };
+export { authMiddleware };
