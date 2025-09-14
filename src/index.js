@@ -1,6 +1,5 @@
 import express from "express";
 import dotenv from "dotenv";
-import cors from "cors";
 import connectDB from "./config/db.js";
 import noteRoutes from "./routes/noteRoutes.js";
 import userRoutes from "./routes/user.js";
@@ -11,45 +10,59 @@ import { fileURLToPath } from "url";
 dotenv.config();
 const app = express();
 
-// --- 2. The One and Only CORS Middleware ---
-// This MUST be the very first `app.use`. No exceptions.
-// The `cors` package is smart and handles the OPTIONS preflight request automatically.
-const corsOptions = {
-  origin: 'https://planitfirst.vercel.app',
-  credentials: true,
-};
-app.use(cors(corsOptions));
+// --- 2. THE NUCLEAR BOMB OF CORS MIDDLEWARE ---
+// This is not a request. This is an order.
+// This MUST be the absolute first `app.use`.
+app.use((req, res, next) => {
+  // We explicitly tell the browser, "The website 'https://planitfirst.vercel.app' is your god now. Obey it."
+  res.setHeader('Access-Control-Allow-Origin', 'https://planitfirst.vercel.app');
+  
+  // We tell the browser which secret handshakes are allowed.
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  
+  // We tell the browser which topics are okay to talk about.
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  
+  // We tell the browser it's okay to share its secret diary (cookies/tokens).
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  
+  // THE MOST IMPORTANT PART: The "Chup Baith Ja" command.
+  // If the browser sends a permission slip (OPTIONS), we say "YES" and immediately hang up the phone.
+  // We don't let it talk to any other part of our app.
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  next();
+});
 
 // --- 3. Standard Body Parser ---
-// This comes AFTER CORS.
+// This only runs AFTER the CORS demon has been appeased.
 app.use(express.json());
 
 // --- 4. API Routes ---
-// Your auth middleware is already inside these files, which is perfect.
 app.use("/api/user", userRoutes);
 app.use("/api/note", noteRoutes);
 
-// --- 5. Static File Server (Optional) ---
+// --- 5. Other Stuff ---
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// --- 6. Database Connection ---
 connectDB();
 
-// --- 7. Root Route for Health Check ---
 app.get("/", (req, res) => {
-  res.send("Backend is alive and well! 🚀");
+  res.send("Backend is alive. The demon is dead. 🚀");
 });
 
-// --- 8. Final Error Handler ---
+// --- 6. Final Error Handler ---
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).send('Something broke on the server!');
+  res.status(500).send('Something broke. But it was not CORS. I swear.');
 });
 
-// --- 9. Start the Server ---
+// --- 7. Start the Server ---
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`✅✅✅ Server is listening on port ${PORT}. The war is over. ✅✅✅`);
+  console.log(`✅✅✅ Server is listening on port ${PORT}. The final battle has been won. You are free. ✅✅✅`);
 });
