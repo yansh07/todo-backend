@@ -5,35 +5,37 @@ import noteRoutes from "./routes/noteRoutes.js";
 import userRoutes from "./routes/user.js";
 import path from "path";
 import { fileURLToPath } from "url";
+import cors from "cors";
 
 // --- 1. Basic Setup ---
 dotenv.config();
 const app = express();
 
-// --- 2. CORS Configuration ---
-app.use((req, res, next) => {
-  const origin = 'https://planitfirst.vercel.app';
-  
-  // Log request details
-  console.log(`🚀 ${req.method} ${req.url} from origin: ${req.headers.origin}`);
-  
-  // Set CORS headers
-  res.setHeader('Access-Control-Allow-Origin', origin);
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  
-  // Handle preflight
-  if (req.method === 'OPTIONS') {
-    console.log('✅ Handling OPTIONS preflight');
-    return res.status(204).end();
-  }
-  
-  next();
+// --- 2. Basic Middleware ---
+app.use(express.json());
+
+// --- 3. CORS Configuration ---
+const corsConfig = {
+  origin: 'https://planitfirst.vercel.app',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  maxAge: 86400 // 24 hours
+};
+
+app.use(cors(corsConfig));
+
+// Handle preflight requests
+app.options('*', (req, res) => {
+  console.log(`Handling OPTIONS request from: ${req.headers.origin}`);
+  res.status(204).send();
 });
 
-// --- 3. Body Parser ---
-app.use(express.json());
+// Request logging middleware
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.path} - Origin: ${req.headers.origin}`);
+  next();
+});
 
 // --- 4. Health Check ---
 app.get("/", (req, res) => {
@@ -57,38 +59,19 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// --- 6.5 CORS Error Handler ---
+// --- 7. Error Handling Middleware ---
 app.use((err, req, res, next) => {
-  if (err.message.includes('CORS')) {
-    console.error('🚫 CORS Error:', {
-      method: req.method,
-      url: req.url,
-      origin: req.headers.origin,
-      error: err.message
-    });
-    return res.status(403).json({
-      error: 'CORS Error',
-      message: 'Origin not allowed',
-      details: err.message
-    });
-  }
-  next(err);
-});
-
-// --- 7. Global Error Handler ---
-app.use((err, req, res, next) => {
-  console.error('💥 GLOBAL ERROR:', err.message);
-  console.error('Stack:', err.stack);
-  res.status(500).json({ 
-    error: 'Internal Server Error',
-    message: err.message 
+  console.error('Error:', err);
+  res.status(err.status || 500).json({
+    error: err.message || 'Internal Server Error',
+    path: req.path
   });
 });
 
-// --- 8. 404 Handler ---
-app.use((req, res) => {
-  console.log('❌ 404:', req.method, req.url);
-  res.status(404).json({ error: 'Route not found' });
+// --- 8. Graceful Shutdown ---
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received. Shutting down gracefully...');
+  process.exit(0);
 });
 
 // --- 9. Database Connection (with error handling) ---
@@ -101,9 +84,10 @@ try {
 }
 
 // --- 10. Start Server ---
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server listening on port ${PORT}`);
+const PORT = process.env.PORT || 8080;
+const server = app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 }).on('error', (err) => {
-  console.error('❌ Server failed to start:', err.message);
+  console.error('Server failed to start:', err);
+  process.exit(1);
 });
