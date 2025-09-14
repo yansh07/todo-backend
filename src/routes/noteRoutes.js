@@ -9,18 +9,16 @@ import {
 
 const router = express.Router();
 
-// Log all routes as they're registered
-console.log("Registering note routes:");
-console.log(" - POST /");
-console.log(" - GET /");
-console.log(" - GET /search");
-console.log(" - PUT /:id");
-console.log(" - DELETE /:id");
+// Define routes
+router.route("/")
+  .post(createNote)
+  .get(getNotes);
 
-router.post("/", createNote);
-router.get("/", getNotes);
-router.get("/search", searchNotes);
-router.put("/:id", updateNote);
-router.delete("/:id", deleteNote);
+router.route("/search")
+  .get(searchNotes);
+
+router.route("/:id")
+  .put(updateNote)
+  .delete(deleteNote);
 
 export default router;

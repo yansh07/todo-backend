@@ -12,41 +12,13 @@ import { auth } from 'express-oauth2-jwt-bearer';
 dotenv.config();
 const app = express();
 
-// Check for required environment variables
-const requiredEnvVars = [
-  'MONGODB_URI',
-  'AUTH0_AUDIENCE',
-  'AUTH0_ISSUER_BASE_URL',
-  'PORT'
-];
-
-const missingEnvVars = requiredEnvVars.filter(key => !process.env[key]);
-if (missingEnvVars.length > 0) {
-  console.error('❌ Missing required environment variables:', missingEnvVars);
-  process.exit(1);
-}
-
-console.log('✅ All required environment variables are present');
-
-// Single CORS configuration
-const corsOptions = {
-  origin: [
-    'https://planitfirst.vercel.app',
-    'http://localhost:5000',
-    'http://localhost:5173'
-  ],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  exposedHeaders: ['Authorization'],
-  maxAge: 86400 // 24 hours
-};
-
-// Apply CORS before any route definitions
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // enable pre-flight for all routes
-
+// Middleware
 app.use(express.json());
+app.use(cors({
+  origin: ['https://planitfirst.vercel.app', 'http://localhost:5173'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE']
+}));
 
 // profile pic
 const __filename = fileURLToPath(import.meta.url);
@@ -55,8 +27,8 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Auth middleware
 const jwtCheck = auth({
-  audience: process.env.AUTH0_AUDIENCE || '',
-  issuerBaseURL: process.env.AUTH0_ISSUER_BASE_URL || '',
+  audience: process.env.AUTH0_AUDIENCE,
+  issuerBaseURL: process.env.AUTH0_ISSUER_BASE_URL,
   tokenSigningAlg: 'RS256'
 });
 
