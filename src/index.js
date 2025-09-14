@@ -1,99 +1,50 @@
-console.log(">>> INDEX.JS RUNNING: LATEST VERSION - GHOSTBUSTER DEPLOY <<<");
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import connectDB from "./config/db.js";
-import noteRoutes from "./routes/noteRoutes.js"
-import userRoutes from "./routes/user.js"
+import noteRoutes from "./routes/noteRoutes.js";
+import userRoutes from "./routes/user.js";
 import path from "path";
 import { fileURLToPath } from "url";
-import { auth } from 'express-oauth2-jwt-bearer';
 
+// --- 1. CONFIG ---
 dotenv.config();
 const app = express();
 
-// ✅ 1. MANUAL CORS MIDDLEWARE - Handle ALL requests first
-app.use((req, res, next) => {
-  const allowedOrigins = ['https://planitfirst.vercel.app', 'http://localhost:5173'];
-  const origin = req.headers.origin;
-  
-  if (allowedOrigins.includes(origin)) {
-    res.header('Access-Control-Allow-Origin', origin);
-  }
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Origin, Accept');
-  
-  // ✅ Handle OPTIONS requests immediately
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-  
-  next();
-});
+// --- 2. THE ONLY CORS SETUP YOU WILL EVER NEED ---
+// This must be the VERY FIRST middleware. Before anything else.
+const corsOptions = {
+  origin: 'https://planitfirst.vercel.app', // Only allow your Vercel app
+  credentials: true,
+};
+app.use(cors(corsOptions));
 
-// ✅ 2. Regular middleware
+// --- 3. STANDARD MIDDLEWARE ---
+// This comes AFTER CORS.
 app.use(express.json());
 
-// ✅ 3. Auth middleware - but only for non-OPTIONS requests
-const jwtCheck = auth({
-  audience: process.env.AUTH0_AUDIENCE,
-  issuerBaseURL: process.env.AUTH0_ISSUER_BASE_URL,
-  tokenSigningAlg: 'RS256'
-});
+// --- 4. YOUR API ROUTES ---
+// The auth middleware is already inside these route files, which is perfect.
+app.use("/api/user", userRoutes);
+app.use("/api/note", noteRoutes);
 
-// ✅ 4. Custom auth middleware that skips OPTIONS
-const optionalAuth = (req, res, next) => {
-  if (req.method === 'OPTIONS') {
-    return next(); // Skip auth for OPTIONS
-  }
-  
-  // Check if authorization header exists
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    // For some public routes, you might want to allow without auth
-    // For now, we'll require auth for all API routes
-    return res.status(401).json({ error: 'Authorization required' });
-  }
-  
-  jwtCheck(req, res, next);
-};
-
-// ✅ 5. Mount routes with optional auth
-console.log("Mounting user routes at /api/user");
-app.use("/api/user", optionalAuth, userRoutes);      
-
-console.log("Mounting note routes at /api/note");
-app.use("/api/note", optionalAuth, noteRoutes);      
-
-// ✅ 6. Static files (no auth needed)
+// --- 5. OTHER STUFF ---
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// ✅ 7. Public routes (no auth needed)
+connectDB();
+
 app.get("/", (req, res) => {
   res.send("Backend is running 🚀");
 });
 
-// ✅ 8. MongoDB connection
-connectDB();
-
-// ✅ 9. Request logging
-app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
-  next();
-});
-
-// ✅ 10. Error handling
+// --- 6. ERROR HANDLER ---
 app.use((err, req, res, next) => {
-  console.error('Error:', err.message);
-  res.status(err.status || 500).json({
-    error: 'Internal server error',
-    message: err.message
-  });
+  console.error(err.stack);
+  res.status(500).send('Something broke!');
 });
 
+// --- 7. START SERVER ---
 const PORT = process.env.PORT || 5000;
-const HOST = '0.0.0.0';
-app.listen(PORT, HOST, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`>>> SERVER IS ALIVE AND WELL ON PORT ${PORT} <<<`));
