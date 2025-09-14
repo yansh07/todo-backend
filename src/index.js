@@ -10,16 +10,22 @@ import { fileURLToPath } from "url";
 dotenv.config();
 const app = express();
 
-// --- 2. CORS Middleware (FIRST!) ---
+// --- 2. CORS Configuration ---
 app.use((req, res, next) => {
-  console.log(`🚀 ${req.method} ${req.url}`);
+  const origin = 'https://planitfirst.vercel.app';
   
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', '*');
-  res.setHeader('Access-Control-Allow-Headers', '*');
+  // Log request details
+  console.log(`🚀 ${req.method} ${req.url} from origin: ${req.headers.origin}`);
   
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  
+  // Handle preflight
   if (req.method === 'OPTIONS') {
-    console.log('✅ PREFLIGHT handled');
+    console.log('✅ Handling OPTIONS preflight');
     return res.status(204).end();
   }
   
@@ -50,6 +56,24 @@ app.use("/api/note", noteRoutes);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+// --- 6.5 CORS Error Handler ---
+app.use((err, req, res, next) => {
+  if (err.message.includes('CORS')) {
+    console.error('🚫 CORS Error:', {
+      method: req.method,
+      url: req.url,
+      origin: req.headers.origin,
+      error: err.message
+    });
+    return res.status(403).json({
+      error: 'CORS Error',
+      message: 'Origin not allowed',
+      details: err.message
+    });
+  }
+  next(err);
+});
 
 // --- 7. Global Error Handler ---
 app.use((err, req, res, next) => {
