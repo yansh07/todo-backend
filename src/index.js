@@ -29,8 +29,8 @@ app.options("*", cors());
 app.use(express.json());
 
 // Fix route mounting - separate paths to avoid conflicts
-app.use("/api/user", userRoutes);      
-app.use("/api/note", noteRoutes);
+// app.use("/api/user", userRoutes);      
+// app.use("/api/note", noteRoutes);
 
 // profile pic
 const __filename = fileURLToPath(import.meta.url);
