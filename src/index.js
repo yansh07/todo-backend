@@ -12,7 +12,29 @@ import { auth } from 'express-oauth2-jwt-bearer';
 dotenv.config();
 const app = express();
 
-// ✅ FIXED CORS CONFIGURATION - Add OPTIONS method and more headers
+// ✅ 1. Handle OPTIONS requests FIRST (before auth middleware)
+app.options('*', cors({
+  origin: ['https://planitfirst.vercel.app', 'http://localhost:5173'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Origin', 'Accept']
+}));
+
+// ✅ 2. Add manual CORS headers for all responses
+app.use((req, res, next) => {
+  const allowedOrigins = ['https://planitfirst.vercel.app', 'http://localhost:5173'];
+  const origin = req.headers.origin;
+  
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Origin, Accept');
+  next();
+});
+
+// ✅ 3. Regular CORS middleware
 app.use(cors({
   origin: ['https://planitfirst.vercel.app', 'http://localhost:5173'],
   credentials: true,
@@ -20,32 +42,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Origin', 'Accept']
 }));
 
-// Handle preflight requests explicitly
-app.options('*', cors());
-
 app.use(express.json());
-
-// ✅ REMOVE THE PROBLEMATIC ROUTE DEBUGGING CODE
-// Delete this entire section:
-// const printRoutes = (app) => {
-//   console.log("\n=== API Routes ===");
-//   app._router?.stack.forEach((middleware) => {
-//     if (middleware.route) {
-//       // Routes registered directly on the app
-//       const methods = Object.keys(middleware.route.methods);
-//       console.log(`${methods.join(',')} ${middleware.route.path}`);
-//     } else if (middleware.name === 'router') {
-//       // Router middleware
-//       middleware.handle.stack.forEach((handler) => {
-//         if (handler.route) {
-//           const methods = Object.keys(handler.route.methods);
-//           const path = handler.route.path;
-//           console.log(`${methods.join(',')} ${path}`);
-//         }
-//       });
-//     }
-//   });
-// };
 
 // profile pic
 const __filename = fileURLToPath(import.meta.url);
@@ -59,25 +56,20 @@ const jwtCheck = auth({
   tokenSigningAlg: 'RS256'
 });
 
-// Mount routes
+// ✅ 4. Create auth middleware that skips OPTIONS requests
+const authUnlessOptions = (req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    return next(); // Skip auth for OPTIONS requests
+  }
+  jwtCheck(req, res, next);
+};
+
+// Mount routes with the modified auth middleware
 console.log("Mounting user routes at /api/user");
-app.use("/api/user", jwtCheck, userRoutes);      
+app.use("/api/user", authUnlessOptions, userRoutes);      
 
 console.log("Mounting note routes at /api/note");
-app.use("/api/note", jwtCheck, noteRoutes);      
-
-// ✅ SIMPLE ROUTE LOGGING INSTEAD
-console.log("\n=== API Routes ===");
-console.log("POST /api/user/verify-user");
-console.log("POST /api/user/auth0-login"); 
-console.log("GET /api/user/profile");
-console.log("PUT /api/user/profile");
-console.log("POST /api/note/");
-console.log("GET /api/note/");
-console.log("GET /api/note/search");
-console.log("PUT /api/note/:id");
-console.log("DELETE /api/note/:id");
-console.log("==================\n");
+app.use("/api/note", authUnlessOptions, noteRoutes);      
 
 // Public route
 app.get("/", (req, res) => {
@@ -87,7 +79,7 @@ app.get("/", (req, res) => {
 // MongoDB connect
 connectDB();
 
-// ✅ REORDER MIDDLEWARE - Request logging should come first
+// Request logging
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
   next();
