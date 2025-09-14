@@ -26,17 +26,18 @@ if (missingEnvVars.length > 0) {
 }
 
 // Single CORS configuration
-app.use(cors({
+const corsOptions = {
   origin: [
     'https://planitfirst.vercel.app',
     'http://localhost:5000',
     'http://localhost:5173'
   ],
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-}));
-app.options("*", cors());
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+app.use(cors(corsOptions));
 
 app.use(express.json());
 
@@ -59,12 +60,25 @@ app._router.stack.forEach(function(r){
     }
 });
 
+// Add this before mounting routes
+const debugRoutes = (prefix, router) => {
+  router.stack.forEach(layer => {
+    if (layer.route) {
+      const path = prefix + layer.route.path;
+      const methods = Object.keys(layer.route.methods);
+      console.log(`Route: ${methods.join(',')} ${path}`);
+    }
+  });
+};
+
 // Protected routes
 console.log("Mounting user routes at /api/user");
 app.use("/api/user", jwtCheck, userRoutes);      
+debugRoutes("/api/user", userRoutes);
 
 console.log("Mounting note routes at /api/note");
 app.use("/api/note", jwtCheck, noteRoutes);      
+debugRoutes("/api/note", noteRoutes);
 
 // Public route should be last
 app.get("/", (req, res) => {
@@ -76,28 +90,31 @@ connectDB();
 
 // Log errors and request path
 app.use((err, req, res, next) => {
-  console.error('Path:', req.path);
-  console.error('Error:', err);
-  next(err);
-});
-
-// Error handling for auth
-app.use((err, req, res, next) => {
-  console.error('Auth Error Details:', {
+  console.error('Request Details:', {
+    method: req.method,
     path: req.path,
-    error: err.message,
+    headers: req.headers,
+    body: req.body
+  });
+  console.error('Error:', {
+    name: err.name,
+    message: err.message,
     stack: err.stack
   });
-  if (err.name === 'UnauthorizedError') {
-    return res.status(401).json({ error: 'Invalid token' });
-  }
   next(err);
 });
 
-// Error handler
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).send('Something broke!');
+  if (err.name === 'UnauthorizedError') {
+    return res.status(401).json({ 
+      error: 'Authentication failed',
+      details: err.message 
+    });
+  }
+  res.status(500).json({ 
+    error: 'Internal server error',
+    message: err.message
+  });
 });
 
 const PORT = process.env.PORT || 5000;
