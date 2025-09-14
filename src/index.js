@@ -1,10 +1,8 @@
 import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
-import dotenv from "dotenv";
-
 import userRoutes from "./routes/user.js"; 
-
+import dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
@@ -26,7 +24,7 @@ app.get("/", (req, res) => {
   res.send("Backend is running ✅");
 });
 
-mongoose.connect(process.env.MONGO_URI, {
+mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
 })
