@@ -11,11 +11,19 @@ import { fileURLToPath } from "url";
 dotenv.config();
 const app = express();
 
+// Define CORS options
+const corsOptions = {
+  origin: 'https://planitfirst.vercel.app',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
+  credentials: true
+};
+
 // --- 1. CORS Configuration ---
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', 'https://planitfirst.vercel.app');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Origin', corsOptions.origin);
+  res.header('Access-Control-Allow-Methods', corsOptions.methods.join(', '));
+  res.header('Access-Control-Allow-Headers', corsOptions.allowedHeaders.join(', '));
   res.header('Access-Control-Allow-Credentials', 'true');
 
   // Handle preflight
@@ -111,7 +119,7 @@ const startServer = async () => {
 === Server Started ===
 🚀 Port: ${PORT}
 🌍 Environment: ${process.env.NODE_ENV}
-🔒 CORS: ${corsOptions.origin}
+🔒 CORS Origin: ${corsOptions.origin}
 ==================
       `);
     });
