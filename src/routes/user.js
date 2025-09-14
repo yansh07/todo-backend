@@ -17,13 +17,41 @@ router.get("/test", (req, res) => {
 router.post("/verify-user", authMiddleware, async (req, res) => {
   try {
     console.log("🔍 /verify-user endpoint hit");
+    
+    // DEBUG: Log the entire auth object to see what's available
+    console.log("🔧 req.auth:", JSON.stringify(req.auth, null, 2));
+    console.log("🔧 req.user:", JSON.stringify(req.user, null, 2));
+    console.log("🔧 req.body:", JSON.stringify(req.body, null, 2));
 
-    // Auth0 se aaya JWT payload
-    const auth0Id = req.auth?.payload?.sub;  
+    // Try different ways to get the auth0 ID
+    let auth0Id = req.auth?.payload?.sub || 
+                  req.auth?.sub || 
+                  req.user?.sub || 
+                  req.user?.id ||
+                  req.auth?.payload?.user_id ||
+                  req.auth?.user_id;
+
+    console.log("🔧 Extracted auth0Id:", auth0Id);
+
     const { email, name, picture } = req.body;
 
     if (!auth0Id) {
-      return res.status(400).json({ error: "Invalid auth0Id from token" });
+      console.error("❌ No auth0Id found in token");
+      console.error("Available auth data:", {
+        "req.auth": req.auth,
+        "req.user": req.user,
+        "req.auth.payload": req.auth?.payload
+      });
+      
+      return res.status(400).json({ 
+        error: "Invalid auth0Id from token",
+        debug: {
+          hasAuth: !!req.auth,
+          hasUser: !!req.user,
+          authKeys: req.auth ? Object.keys(req.auth) : [],
+          userKeys: req.user ? Object.keys(req.user) : []
+        }
+      });
     }
 
     // DB me user find karo
@@ -38,9 +66,9 @@ router.post("/verify-user", authMiddleware, async (req, res) => {
     console.log("👤 Creating new user...");
     const newUser = new User({
       auth0Id,
-      email,
-      fullName: name,
-      profilePic: picture
+      email: email || req.auth?.payload?.email || req.user?.email,
+      fullName: name || req.auth?.payload?.name || req.user?.name,
+      profilePic: picture || req.auth?.payload?.picture || req.user?.picture
     });
 
     await newUser.save();
