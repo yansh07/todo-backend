@@ -28,7 +28,6 @@ app.options("*", cors());
 app.use(express.json());
 
 // Fix route mounting - separate paths to avoid conflicts
-app.use("/api/user", userAuthRoutes); 
 app.use("/api/user", userRoutes);      
 app.use("/api/note", noteRoutes);
 
