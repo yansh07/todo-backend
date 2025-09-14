@@ -1,12 +1,12 @@
 console.log(">>> ROUTES/USER.JS LOADED: LATEST VERSION <<<");
 import express from "express";
-import { authMiddleware } from "../middleware/authMiddleware.js";
+// import { authMiddleware } from "../middleware/authMiddleware.js";
 import User from "../models/User.js";
 
 const router = express.Router();
 
 // ✅ Route 1: Verify user on login/signup (called from Dashboard)
-router.post("/verify-user", authMiddleware, async (req, res) => {
+router.post("/verify-user", async (req, res) => {
   try {
     const auth0Id = req.auth.payload.sub;
     const { email, name, picture } = req.body;
@@ -37,7 +37,7 @@ router.post("/verify-user", authMiddleware, async (req, res) => {
 });
 
 // ✅ Route 2: Auth0 login (called after successful Auth0 login)
-router.post("/auth0-login", authMiddleware, async (req, res) => {
+router.post("/auth0-login", async (req, res) => {
   try {
     const auth0Id = req.auth.payload.sub;
     const { email, fullName, profilePic } = req.body;
@@ -61,7 +61,7 @@ router.post("/auth0-login", authMiddleware, async (req, res) => {
 });
 
 // ✅ Route 3: Get user profile
-router.get("/profile", authMiddleware, async (req, res) => {
+router.get("/profile", async (req, res) => {
   try {
     const auth0Id = req.auth.payload.sub;
     const user = await User.findOne({ auth0Id }).select("-password");
@@ -77,7 +77,7 @@ router.get("/profile", authMiddleware, async (req, res) => {
 });
 
 // ✅ Route 4: Update user profile
-router.put("/profile", authMiddleware, async (req, res) => {
+router.put("/profile", async (req, res) => {
   try {
     const auth0Id = req.auth.payload.sub;
     const { fullName, about, bio } = req.body;
