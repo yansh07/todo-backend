@@ -12,13 +12,40 @@ import { auth } from 'express-oauth2-jwt-bearer';
 dotenv.config();
 const app = express();
 
-// Middleware
-app.use(express.json());
+// ✅ FIXED CORS CONFIGURATION - Add OPTIONS method and more headers
 app.use(cors({
   origin: ['https://planitfirst.vercel.app', 'http://localhost:5173'],
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Origin', 'Accept']
 }));
+
+// Handle preflight requests explicitly
+app.options('*', cors());
+
+app.use(express.json());
+
+// ✅ REMOVE THE PROBLEMATIC ROUTE DEBUGGING CODE
+// Delete this entire section:
+// const printRoutes = (app) => {
+//   console.log("\n=== API Routes ===");
+//   app._router?.stack.forEach((middleware) => {
+//     if (middleware.route) {
+//       // Routes registered directly on the app
+//       const methods = Object.keys(middleware.route.methods);
+//       console.log(`${methods.join(',')} ${middleware.route.path}`);
+//     } else if (middleware.name === 'router') {
+//       // Router middleware
+//       middleware.handle.stack.forEach((handler) => {
+//         if (handler.route) {
+//           const methods = Object.keys(handler.route.methods);
+//           const path = handler.route.path;
+//           console.log(`${methods.join(',')} ${path}`);
+//         }
+//       });
+//     }
+//   });
+// };
 
 // profile pic
 const __filename = fileURLToPath(import.meta.url);
@@ -32,38 +59,27 @@ const jwtCheck = auth({
   tokenSigningAlg: 'RS256'
 });
 
-// First mount all routes
+// Mount routes
 console.log("Mounting user routes at /api/user");
 app.use("/api/user", jwtCheck, userRoutes);      
 
 console.log("Mounting note routes at /api/note");
 app.use("/api/note", jwtCheck, noteRoutes);      
 
-// Then add debug logging AFTER routes are mounted
-const printRoutes = (app) => {
-  console.log("\n=== API Routes ===");
-  app._router?.stack.forEach((middleware) => {
-    if (middleware.route) {
-      // Routes registered directly on the app
-      const methods = Object.keys(middleware.route.methods);
-      console.log(`${methods.join(',')} ${middleware.route.path}`);
-    } else if (middleware.name === 'router') {
-      // Router middleware
-      middleware.handle.stack.forEach((handler) => {
-        if (handler.route) {
-          const methods = Object.keys(handler.route.methods);
-          const path = handler.route.path;
-          console.log(`${methods.join(',')} ${path}`);
-        }
-      });
-    }
-  });
-};
+// ✅ SIMPLE ROUTE LOGGING INSTEAD
+console.log("\n=== API Routes ===");
+console.log("POST /api/user/verify-user");
+console.log("POST /api/user/auth0-login"); 
+console.log("GET /api/user/profile");
+console.log("PUT /api/user/profile");
+console.log("POST /api/note/");
+console.log("GET /api/note/");
+console.log("GET /api/note/search");
+console.log("PUT /api/note/:id");
+console.log("DELETE /api/note/:id");
+console.log("==================\n");
 
-// Call it after mounting all routes
-printRoutes(app);
-
-// Public route should be last
+// Public route
 app.get("/", (req, res) => {
   res.send("Backend is running 🚀");
 });
@@ -71,31 +87,21 @@ app.get("/", (req, res) => {
 // MongoDB connect
 connectDB();
 
-// Log errors and request path
-app.use((err, req, res, next) => {
-  console.error('Request Details:', {
-    method: req.method,
-    path: req.path,
-    headers: req.headers,
-    body: req.body
-  });
-  console.error('Error:', {
-    name: err.name,
-    message: err.message,
-    stack: err.stack
-  });
-  next(err);
-});
-
-// Add this before error handlers
+// ✅ REORDER MIDDLEWARE - Request logging should come first
 app.use((req, res, next) => {
-  console.log(`${req.method} ${req.url}`);
-  console.log('Headers:', req.headers);
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
   next();
 });
 
+// Error handlers
 app.use((err, req, res, next) => {
-  console.error('Error:', err);
+  console.error('Error Details:', {
+    method: req.method,
+    path: req.path,
+    errorName: err.name,
+    errorMessage: err.message
+  });
+  
   res.status(500).json({
     error: 'Internal server error',
     message: err.message
