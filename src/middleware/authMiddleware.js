@@ -1,4 +1,3 @@
-// middleware/authMiddleware.js
 import jwt from "jsonwebtoken";
 import jwksClient from "jwks-rsa";
 
@@ -41,8 +40,8 @@ export const authMiddleware = (req, res, next) => {
       }
 
       // 🔑 Important: Yahan auth0Id ko set hai
-      req.auth0Id = decoded.sub; // directly rakho, baar-baar payload mat wrap karo
-      req.userPayload = decoded; // agar future me email/name chahiye to use kar lena
+      req.auth0Id = decoded.sub; // directly rakh raha hoon, baar-baar payload nahi wrap karna hai
+      req.userPayload = decoded; // agar future me email/name chahiye to use kar lunga
 
       console.log("✅ JWT verified, user:", decoded.sub);
       next();
