@@ -53,32 +53,36 @@ const jwtCheck = auth({
   tokenSigningAlg: 'RS256'
 });
 
-// Add debug logging for routes
-app._router.stack.forEach(function(r){
-    if (r.route && r.route.path){
-        console.log("Route path:", r.route.path)
-    }
-});
+// First mount all routes
+console.log("Mounting user routes at /api/user");
+app.use("/api/user", jwtCheck, userRoutes);      
 
-// Add this before mounting routes
-const debugRoutes = (prefix, router) => {
-  router.stack.forEach(layer => {
-    if (layer.route) {
-      const path = prefix + layer.route.path;
-      const methods = Object.keys(layer.route.methods);
-      console.log(`Route: ${methods.join(',')} ${path}`);
+console.log("Mounting note routes at /api/note");
+app.use("/api/note", jwtCheck, noteRoutes);      
+
+// Then add debug logging AFTER routes are mounted
+const printRoutes = (app) => {
+  console.log("\n=== API Routes ===");
+  app._router?.stack.forEach((middleware) => {
+    if (middleware.route) {
+      // Routes registered directly on the app
+      const methods = Object.keys(middleware.route.methods);
+      console.log(`${methods.join(',')} ${middleware.route.path}`);
+    } else if (middleware.name === 'router') {
+      // Router middleware
+      middleware.handle.stack.forEach((handler) => {
+        if (handler.route) {
+          const methods = Object.keys(handler.route.methods);
+          const path = handler.route.path;
+          console.log(`${methods.join(',')} ${path}`);
+        }
+      });
     }
   });
 };
 
-// Protected routes
-console.log("Mounting user routes at /api/user");
-app.use("/api/user", jwtCheck, userRoutes);      
-debugRoutes("/api/user", userRoutes);
-
-console.log("Mounting note routes at /api/note");
-app.use("/api/note", jwtCheck, noteRoutes);      
-debugRoutes("/api/note", noteRoutes);
+// Call it after mounting all routes
+printRoutes(app);
 
 // Public route should be last
 app.get("/", (req, res) => {
