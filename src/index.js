@@ -12,6 +12,19 @@ import { auth } from 'express-oauth2-jwt-bearer';
 dotenv.config();
 const app = express();
 
+// Check for required environment variables
+const requiredEnvVars = [
+  'AUTH0_AUDIENCE',
+  'AUTH0_ISSUER_BASE_URL',
+  'PORT'
+];
+
+const missingEnvVars = requiredEnvVars.filter(key => !process.env[key]);
+if (missingEnvVars.length > 0) {
+  console.error('Missing required environment variables:', missingEnvVars);
+  process.exit(1);
+}
+
 // Single CORS configuration
 app.use(cors({
   origin: [
@@ -34,13 +47,23 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Auth middleware
 const jwtCheck = auth({
-  audience: process.env.AUTH0_AUDIENCE,
-  issuerBaseURL: process.env.AUTH0_ISSUER_BASE_URL,
+  audience: process.env.AUTH0_AUDIENCE || '',
+  issuerBaseURL: process.env.AUTH0_ISSUER_BASE_URL || '',
   tokenSigningAlg: 'RS256'
 });
 
+// Add debug logging for routes
+app._router.stack.forEach(function(r){
+    if (r.route && r.route.path){
+        console.log("Route path:", r.route.path)
+    }
+});
+
 // Protected routes
+console.log("Mounting user routes at /api/user");
 app.use("/api/user", jwtCheck, userRoutes);      
+
+console.log("Mounting note routes at /api/note");
 app.use("/api/note", jwtCheck, noteRoutes);      
 
 // Public route should be last
@@ -55,6 +78,19 @@ connectDB();
 app.use((err, req, res, next) => {
   console.error('Path:', req.path);
   console.error('Error:', err);
+  next(err);
+});
+
+// Error handling for auth
+app.use((err, req, res, next) => {
+  console.error('Auth Error Details:', {
+    path: req.path,
+    error: err.message,
+    stack: err.stack
+  });
+  if (err.name === 'UnauthorizedError') {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
   next(err);
 });
 
