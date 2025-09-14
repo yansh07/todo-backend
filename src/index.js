@@ -10,37 +10,36 @@ import { fileURLToPath } from "url";
 dotenv.config();
 const app = express();
 
-// --- 2. NUCLEAR CORS MIDDLEWARE (FIRST THING!) ---
+// --- 2. CORS Middleware (FIRST!) ---
 app.use((req, res, next) => {
-  console.log(`🚀 INCOMING: ${req.method} ${req.url} from ${req.headers.origin || 'no-origin'}`);
+  console.log(`🚀 ${req.method} ${req.url}`);
   
-  // Allow ALL origins temporarily for debugging
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', '*');
   res.setHeader('Access-Control-Allow-Headers', '*');
-  res.setHeader('Access-Control-Max-Age', '86400');
   
-  // Handle preflight
   if (req.method === 'OPTIONS') {
     console.log('✅ PREFLIGHT handled');
     return res.status(204).end();
   }
   
-  console.log('📤 Headers set, continuing...');
   next();
 });
 
 // --- 3. Body Parser ---
 app.use(express.json());
 
-// --- 4. Test Route ---
-app.get('/api/test-cors', (req, res) => {
-  console.log('🧪 Test CORS endpoint hit');
+// --- 4. Health Check ---
+app.get("/", (req, res) => {
+  console.log('🏠 Root endpoint hit');
   res.json({ 
-    message: 'CORS IS WORKING!', 
-    timestamp: new Date().toISOString(),
-    origin: req.headers.origin 
+    message: "Server is alive! 🚀", 
+    timestamp: new Date().toISOString() 
   });
+});
+
+app.get("/health", (req, res) => {
+  res.json({ status: "healthy", timestamp: new Date().toISOString() });
 });
 
 // --- 5. API Routes ---
@@ -52,20 +51,35 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-connectDB();
-
-app.get("/", (req, res) => {
-  res.send("🔥 NUCLEAR CORS DEPLOYED 🔥");
-});
-
-// --- 7. Error Handler ---
+// --- 7. Global Error Handler ---
 app.use((err, req, res, next) => {
-  console.error('💥 ERROR:', err.message);
-  res.status(500).json({ error: 'Server error', message: err.message });
+  console.error('💥 GLOBAL ERROR:', err.message);
+  console.error('Stack:', err.stack);
+  res.status(500).json({ 
+    error: 'Internal Server Error',
+    message: err.message 
+  });
 });
 
-// --- 8. Start Server ---
+// --- 8. 404 Handler ---
+app.use((req, res) => {
+  console.log('❌ 404:', req.method, req.url);
+  res.status(404).json({ error: 'Route not found' });
+});
+
+// --- 9. Database Connection (with error handling) ---
+try {
+  await connectDB();
+  console.log('✅ Database connected');
+} catch (error) {
+  console.error('❌ Database connection failed:', error.message);
+  process.exit(1);
+}
+
+// --- 10. Start Server ---
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`🚀 NUCLEAR CORS SERVER ON PORT ${PORT}`);
+  console.log(`🚀 Server listening on port ${PORT}`);
+}).on('error', (err) => {
+  console.error('❌ Server failed to start:', err.message);
 });
