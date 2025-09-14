@@ -1,5 +1,8 @@
 import jwt from "express-jwt";
 import jwksRsa from "jwks-rsa";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 // Auth0 JWT verification
 const checkJwt = jwt({
