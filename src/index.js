@@ -80,6 +80,31 @@ app.use((err, req, res, next) => {
   });
 });
 
+// Process error handlers
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+});
+
 // --- 7. START SERVER ---
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`>>> SERVER IS ALIVE AND WELL ON PORT ${PORT} <<<`));
+const startServer = async () => {
+  try {
+    await connectDB();
+    console.log('✅ MongoDB connected');
+    
+    const PORT = process.env.PORT || 5000;
+    app.listen(PORT, () => {
+      console.log(`✅ Server running on port ${PORT}`);
+      console.log(`✅ CORS enabled for: ${corsOptions.origin}`);
+      console.log(`✅ Environment: ${process.env.NODE_ENV}`);
+    });
+  } catch (error) {
+    console.error('❌ Server startup failed:', error);
+    process.exit(1);
+  }
+};
+
+startServer();
