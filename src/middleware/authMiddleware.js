@@ -1,20 +1,18 @@
 // middleware/authMiddleware.js
 import jwt from "jsonwebtoken";
-import jwksClient from "jwks-client";
+import jwksClient from "jwks-rsa";
 
-// Create JWKS client for your Auth0 domain
 const client = jwksClient({
   jwksUri: `https://${process.env.AUTH0_ISSUER_BASE_URL}/.well-known/jwks.json`,
 });
 
-// Function to get the signing key
 function getKey(header, callback) {
   client.getSigningKey(header.kid, (err, key) => {
     if (err) {
-      console.error("❌ Error getting signing key:", err);
+      console.error("Error getting signing key:", err);
       return callback(err);
     }
-    const signingKey = key.publicKey || key.rsaPublicKey;
+    const signingKey = key.getPublicKey();
     callback(null, signingKey);
   });
 }
@@ -32,18 +30,19 @@ export const authMiddleware = (req, res, next) => {
     token,
     getKey,
     {
-      audience: process.env.AUTH0_AUDIENCE, // Your API identifier
+      audience: process.env.AUTH0_AUDIENCE,
       issuer: `https://${process.env.AUTH0_ISSUER_BASE_URL}/`,
       algorithms: ["RS256"],
     },
     (err, decoded) => {
       if (err) {
-        console.error("❌ JWT verification error:", err);
+        console.error("JWT verification error:", err);
         return res.status(401).json({ error: "Invalid token" });
       }
 
-      // ✅ Standardize: save decoded token directly to req.user
-      req.user = decoded;
+      // 🔑 Important: Yahan auth0Id ko set hai
+      req.auth0Id = decoded.sub; // directly rakho, baar-baar payload mat wrap karo
+      req.userPayload = decoded; // agar future me email/name chahiye to use kar lena
 
       console.log("✅ JWT verified, user:", decoded.sub);
       next();

@@ -10,7 +10,7 @@ const getUserFromAuth = async (auth0Id) => {
 export const createNote = async (req, res) => {
   try {
     const { title, category, content } = req.body;
-    const auth0Id = req.auth.payload.sub;
+    const auth0Id = req.auth0Id;  // directly middleware se
 
     const user = await getUserFromAuth(auth0Id);
     if (!user) return res.status(404).json({ error: "User profile not found." });
@@ -32,7 +32,7 @@ export const createNote = async (req, res) => {
 // 📌 Get all notes for logged-in user
 export const getNotes = async (req, res) => {
   try {
-    const auth0Id = req.auth.payload.sub;
+    const auth0Id = req.auth0Id;
     const user = await getUserFromAuth(auth0Id);
     if (!user) return res.status(404).json({ error: "User not found" });
 
@@ -48,22 +48,22 @@ export const getNotes = async (req, res) => {
 export const searchNotes = async (req, res) => {
   try {
     const { query } = req.query;
-    const auth0Id = req.auth.payload.sub;
+    const auth0Id = req.auth0Id;
 
     const user = await getUserFromAuth(auth0Id);
     if (!user) return res.status(404).json({ error: "User not found" });
 
     let notes;
-    if (!query || query.trim() === '') {
+    if (!query || query.trim() === "") {
       notes = await Note.find({ user: user._id }).sort({ createdAt: -1 });
     } else {
-      const searchRegex = new RegExp(query.trim(), 'i');
+      const searchRegex = new RegExp(query.trim(), "i");
       notes = await Note.find({
         user: user._id,
         $or: [
           { title: { $regex: searchRegex } },
-          { category: { $regex: searchRegex } }
-        ]
+          { category: { $regex: searchRegex } },
+        ],
       }).sort({ createdAt: -1 });
     }
 
@@ -78,7 +78,7 @@ export const searchNotes = async (req, res) => {
 export const updateNote = async (req, res) => {
   try {
     const { id } = req.params;
-    const auth0Id = req.auth.payload.sub;
+    const auth0Id = req.auth0Id;
 
     const user = await getUserFromAuth(auth0Id);
     if (!user) return res.status(404).json({ error: "User not found" });
@@ -104,7 +104,7 @@ export const updateNote = async (req, res) => {
 export const deleteNote = async (req, res) => {
   try {
     const { id } = req.params;
-    const auth0Id = req.auth.payload.sub;
+    const auth0Id = req.auth0Id;
 
     const user = await getUserFromAuth(auth0Id);
     if (!user) return res.status(404).json({ error: "User not found" });
