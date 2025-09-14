@@ -10,31 +10,37 @@ import { fileURLToPath } from "url";
 dotenv.config();
 const app = express();
 
-// --- 2. ENHANCED CORS MIDDLEWARE ---
+// --- 2. NUCLEAR CORS MIDDLEWARE (FIRST THING!) ---
 app.use((req, res, next) => {
-  console.log(`📡 ${req.method} request to ${req.url} from origin: ${req.headers.origin}`);
+  console.log(`🚀 INCOMING: ${req.method} ${req.url} from ${req.headers.origin || 'no-origin'}`);
   
-  // Set CORS headers
-  res.setHeader('Access-Control-Allow-Origin', 'https://planitfirst.vercel.app');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  // Allow ALL origins temporarily for debugging
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', '*');
+  res.setHeader('Access-Control-Allow-Headers', '*');
+  res.setHeader('Access-Control-Max-Age', '86400');
   
-  // Handle preflight requests
+  // Handle preflight
   if (req.method === 'OPTIONS') {
-    console.log('🚁 Handling preflight request');
-    return res.status(200).end();
+    console.log('✅ PREFLIGHT handled');
+    return res.status(204).end();
   }
-
+  
+  console.log('📤 Headers set, continuing...');
   next();
 });
 
 // --- 3. Body Parser ---
 app.use(express.json());
 
-// --- 4. Test Route (Add this temporarily) ---
-app.get('/api/test', (req, res) => {
-  res.json({ message: 'CORS is working!', timestamp: new Date().toISOString() });
+// --- 4. Test Route ---
+app.get('/api/test-cors', (req, res) => {
+  console.log('🧪 Test CORS endpoint hit');
+  res.json({ 
+    message: 'CORS IS WORKING!', 
+    timestamp: new Date().toISOString(),
+    origin: req.headers.origin 
+  });
 });
 
 // --- 5. API Routes ---
@@ -49,18 +55,17 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 connectDB();
 
 app.get("/", (req, res) => {
-  res.send("Backend is alive. The demon is dead. 🚀");
+  res.send("🔥 NUCLEAR CORS DEPLOYED 🔥");
 });
 
 // --- 7. Error Handler ---
 app.use((err, req, res, next) => {
-  console.error('💥 Error:', err.stack);
-  res.status(500).json({ error: 'Something broke. But it was not CORS. I swear.' });
+  console.error('💥 ERROR:', err.message);
+  res.status(500).json({ error: 'Server error', message: err.message });
 });
 
 // --- 8. Start Server ---
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`✅ Server listening on port ${PORT}`);
-  console.log(`🌍 CORS configured for: https://planitfirst.vercel.app`);
+  console.log(`🚀 NUCLEAR CORS SERVER ON PORT ${PORT}`);
 });
