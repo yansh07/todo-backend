@@ -14,6 +14,7 @@ const app = express();
 
 // Check for required environment variables
 const requiredEnvVars = [
+  'MONGODB_URI',
   'AUTH0_AUDIENCE',
   'AUTH0_ISSUER_BASE_URL',
   'PORT'
@@ -21,9 +22,11 @@ const requiredEnvVars = [
 
 const missingEnvVars = requiredEnvVars.filter(key => !process.env[key]);
 if (missingEnvVars.length > 0) {
-  console.error('Missing required environment variables:', missingEnvVars);
+  console.error('❌ Missing required environment variables:', missingEnvVars);
   process.exit(1);
 }
+
+console.log('✅ All required environment variables are present');
 
 // Single CORS configuration
 const corsOptions = {
