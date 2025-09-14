@@ -7,150 +7,49 @@ import userRoutes from "./routes/user.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
-// --- 1. CONFIG ---
+// --- 1. Basic Setup ---
 dotenv.config();
 const app = express();
 
-// Define CORS options
+// --- 2. The One and Only CORS Middleware ---
+// This MUST be the very first `app.use`. No exceptions.
+// The `cors` package is smart and handles the OPTIONS preflight request automatically.
 const corsOptions = {
   origin: 'https://planitfirst.vercel.app',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
-  credentials: true
+  credentials: true,
 };
+app.use(cors(corsOptions));
 
-// --- 1. CORS Configuration ---
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', corsOptions.origin);
-  res.header('Access-Control-Allow-Methods', corsOptions.methods.join(', '));
-  res.header('Access-Control-Allow-Headers', corsOptions.allowedHeaders.join(', '));
-  res.header('Access-Control-Allow-Credentials', 'true');
+// --- 3. Standard Body Parser ---
+// This comes AFTER CORS.
+app.use(express.json());
 
-  // Handle preflight
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-  next();
-});
-
-// --- 2. Debug middleware ---
-app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-  console.log('Headers:', req.headers);
-  next();
-});
-
-// --- 3. YOUR API ROUTES ---
-// The auth middleware is already inside these route files, which is perfect.
+// --- 4. API Routes ---
+// Your auth middleware is already inside these files, which is perfect.
 app.use("/api/user", userRoutes);
 app.use("/api/note", noteRoutes);
 
-// Add this before your API routes
-app.get('/api/test-cors', (req, res) => {
-  res.json({
-    message: 'CORS is working',
-    origin: req.headers.origin,
-    method: req.method
-  });
-});
-
-// --- 5. OTHER STUFF ---
+// --- 5. Static File Server (Optional) ---
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
+// --- 6. Database Connection ---
 connectDB();
 
+// --- 7. Root Route for Health Check ---
 app.get("/", (req, res) => {
-  res.send("Backend is running 🚀");
+  res.send("Backend is alive and well! 🚀");
 });
 
-// --- 4. Enhanced Error Handler ---
+// --- 8. Final Error Handler ---
 app.use((err, req, res, next) => {
-  console.error('Error:', {
-    message: err.message,
-    origin: req.headers.origin,
-    path: req.path,
-    method: req.method
-  });
-  
-  if (err.message === 'Not allowed by CORS') {
-    return res.status(403).json({
-      error: 'CORS Error',
-      message: `Origin ${req.headers.origin} not allowed`
-    });
-  }
-  
-  res.status(500).json({ 
-    error: 'Internal server error',
-    message: err.message 
-  });
+  console.error(err.stack);
+  res.status(500).send('Something broke on the server!');
 });
 
-// Process error handlers
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection:', reason);
+// --- 9. Start the Server ---
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`✅✅✅ Server is listening on port ${PORT}. The war is over. ✅✅✅`);
 });
-
-process.on('uncaughtException', (error) => {
-  console.error('Uncaught Exception:', error);
-});
-
-// --- 7. START SERVER ---
-const startServer = async () => {
-  try {
-    // Validate required environment variables
-    const requiredEnvVars = ['PORT', 'MONGODB_URI', 'NODE_ENV'];
-    const missingVars = requiredEnvVars.filter(key => !process.env[key]);
-    
-    if (missingVars.length) {
-      throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
-    }
-
-    // Connect to MongoDB first
-    console.log('Connecting to MongoDB...');
-    await connectDB();
-    console.log('✅ MongoDB connected');
-
-    // Start Express server
-    const PORT = process.env.PORT || 8080;
-    const server = app.listen(PORT, () => {
-      console.log(`
-=== Server Started ===
-🚀 Port: ${PORT}
-🌍 Environment: ${process.env.NODE_ENV}
-🔒 CORS Origin: ${corsOptions.origin}
-==================
-      `);
-    });
-
-    // Add server error handler
-    server.on('error', (error) => {
-      console.error('Server error:', error);
-      process.exit(1);
-    });
-
-  } catch (error) {
-    console.error('❌ Startup failed:', error.message);
-    process.exit(1);
-  }
-};
-
-// Add this after your imports
-const validateEnv = () => {
-  const required = {
-    NODE_ENV: process.env.NODE_ENV,
-    PORT: process.env.PORT,
-    MONGODB_URI: process.env.MONGODB_URI
-  };
-
-  console.log('Environment variables:');
-  Object.entries(required).forEach(([key, value]) => {
-    console.log(`${key}: ${value ? '✅' : '❌'}`);
-  });
-};
-
-// Add this right before startServer()
-validateEnv();
-
-startServer();
