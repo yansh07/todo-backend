@@ -37,10 +37,14 @@ const corsOptions = {
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Authorization'],
+  maxAge: 86400 // 24 hours
 };
 
+// Apply CORS before any route definitions
 app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // enable pre-flight for all routes
 
 app.use(express.json());
 
@@ -111,14 +115,16 @@ app.use((err, req, res, next) => {
   next(err);
 });
 
+// Add this before error handlers
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`);
+  console.log('Headers:', req.headers);
+  next();
+});
+
 app.use((err, req, res, next) => {
-  if (err.name === 'UnauthorizedError') {
-    return res.status(401).json({ 
-      error: 'Authentication failed',
-      details: err.message 
-    });
-  }
-  res.status(500).json({ 
+  console.error('Error:', err);
+  res.status(500).json({
     error: 'Internal server error',
     message: err.message
   });
