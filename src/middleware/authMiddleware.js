@@ -30,7 +30,7 @@ export const authMiddleware = (req, res, next) => {
 
   jwt.verify(token, getKey, {
     audience: process.env.AUTH0_AUDIENCE, // Your API identifier
-    issuer: `https://${process.env.AUTH0_DOMAIN}/`,
+    issuer: `https://${process.env.AUTH0_ISSUER_BASE_URL}/`,
     algorithms: ['RS256']
   }, (err, decoded) => {
     if (err) {
