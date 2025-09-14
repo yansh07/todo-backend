@@ -35,6 +35,6 @@ noteSchema.index({
     category: 1 
   }
 });
-
+console.log("MONGODB_URI from env:", process.env.MONGODB_URI);
 const Note = mongoose.model("Note", noteSchema);
 export default Note;
