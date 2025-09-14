@@ -11,36 +11,24 @@ import { fileURLToPath } from "url";
 dotenv.config();
 const app = express();
 
-// --- 1. Enhanced CORS Configuration ---
-const corsOptions = {
-  origin: 'https://planitfirst.vercel.app', // Single string instead of array
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
-  optionsSuccessStatus: 204,
-  preflightContinue: false
-};
+// --- 1. CORS Configuration ---
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', 'https://planitfirst.vercel.app');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
 
-// Apply CORS first - before any other middleware
-app.use(cors(corsOptions));
-
-// Handle OPTIONS preflight for all routes
-app.options('*', (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', 'https://planitfirst.vercel.app');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.status(204).end();
+  // Handle preflight
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  next();
 });
 
-// --- 2. STANDARD MIDDLEWARE ---
-// This comes AFTER CORS.
-app.use(express.json());
-
-// Debug middleware - log all requests
+// --- 2. Debug middleware ---
 app.use((req, res, next) => {
-  console.log(`${req.method} ${req.url}`);
-  console.log('Headers:', JSON.stringify(req.headers, null, 2));
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  console.log('Headers:', req.headers);
   next();
 });
 
