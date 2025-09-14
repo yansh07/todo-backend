@@ -13,6 +13,40 @@ router.get("/test", (req, res) => {
   });
 });
 
+// ==================== GET PROFILE ====================
+router.get("/profile", authMiddleware, async (req, res) => {
+  try {
+    console.log("🔍 /profile endpoint hit");
+    
+    const auth0Id = req.auth?.payload?.sub || 
+                    req.auth?.sub || 
+                    req.user?.sub || 
+                    req.user?.id ||
+                    req.auth?.payload?.user_id ||
+                    req.auth?.user_id;
+
+    if (!auth0Id) {
+      return res.status(400).json({ error: "Invalid auth0Id from token" });
+    }
+
+    const user = await User.findOne({ auth0Id });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    console.log("✅ Profile fetched:", user._id);
+    return res.json(user);
+
+  } catch (err) {
+    console.error("❌ Error in /profile:", err);
+    res.status(500).json({ 
+      error: "Server error fetching profile", 
+      details: err.message 
+    });
+  }
+});
+
 // ==================== VERIFY USER ====================
 router.post("/verify-user", authMiddleware, async (req, res) => {
   try {
