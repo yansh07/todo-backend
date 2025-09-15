@@ -33,6 +33,7 @@ export const authMiddleware = (req, res, next) => {
       console.error("❌ JWT verification failed:", err.message);
       return res.status(401).json({ error: "Invalid token", details: err.message });
     }
+    
 
     console.log("✅ JWT verified successfully");
     console.log("🔧 Decoded token:", JSON.stringify(decoded, null, 2));
