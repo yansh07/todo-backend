@@ -12,7 +12,7 @@ Built with ❤️,  debugged at 2AM, and deployed end-to-end.
 <br>
 
 ## 🚀 Features  
-**✅️ User authentication (Signup/Login with JWT + bcrypt)**  
+**✅️ User authentication (Signup/Login with JWT + OAuth)**  
 **✅️ Password hashing for secure storage**  
 **✅️ Profile picture upload (cloudinary + Multer)**  
 **✅️ Create, edit, delete notes**  
@@ -27,6 +27,11 @@ Built with ❤️,  debugged at 2AM, and deployed end-to-end.
 <br>
 <br>
 
+## 🖼️ Screenshots  
+<img src="public/login.png" alt="main" height="300"/><img src="public/dashboard.png" alt="main" height="300"/><img src="public/profile.png" alt="main" height="300"/><img src="public/addnote.png" alt="main" height="300"/><img src="public/upload.png" alt="main" height="300"/>  
+
+<br>
+<br>
 
 ## 🛠️ Teach Stack  
 **・ Frontend:** React, TailwindCSS, Context API  
