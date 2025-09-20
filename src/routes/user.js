@@ -1,10 +1,26 @@
 import express from "express";
 import User from "../models/User.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
+import { uploadProfilePic, updateProfile, getProfile } from "../controllers/userController.js";
+import multer from "multer";
 
 const router = express.Router();
 
-// ==================== TEST ROUTE ====================
+// 📌 Multer configuration for memory storage
+const storage = multer.memoryStorage();
+const upload = multer({ 
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files allowed'), false);
+    }
+  }
+});
+
+//test route
 router.get("/test", (req, res) => {
   console.log("🧪 User test route hit");
   res.json({ 
@@ -13,41 +29,10 @@ router.get("/test", (req, res) => {
   });
 });
 
-// ==================== GET PROFILE ====================
-router.get("/profile", authMiddleware, async (req, res) => {
-  try {
-    console.log("🔍 /profile endpoint hit");
-    
-    const auth0Id = req.auth?.payload?.sub || 
-                    req.auth?.sub || 
-                    req.user?.sub || 
-                    req.user?.id ||
-                    req.auth?.payload?.user_id ||
-                    req.auth?.user_id;
+//get user
+router.get("/profile", authMiddleware, getProfile);
 
-    if (!auth0Id) {
-      return res.status(400).json({ error: "Invalid auth0Id from token" });
-    }
-
-    const user = await User.findOne({ auth0Id });
-
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
-
-    console.log("✅ Profile fetched:", user._id);
-    return res.json(user);
-
-  } catch (err) {
-    console.error("❌ Error in /profile:", err);
-    res.status(500).json({ 
-      error: "Server error fetching profile", 
-      details: err.message 
-    });
-  }
-});
-
-// ==================== VERIFY USER ====================
+// verify user
 router.post("/verify-user", authMiddleware, async (req, res) => {
   try {
     console.log("🔍 /verify-user endpoint hit");
@@ -119,69 +104,10 @@ router.post("/verify-user", authMiddleware, async (req, res) => {
   }
 });
 
-// ==================== UPDATE PROFILE ====================
-router.put("/update-profile", authMiddleware, async (req, res) => {
-  try {
-    console.log("🔍 /update-profile endpoint hit");
-    
-    const auth0Id = req.auth?.payload?.sub || req.auth?.sub;
-    const { about, fullName } = req.body;
+//update profile
+router.put("/update-profile", authMiddleware, updateProfile);
 
-    if (!auth0Id) {
-      return res.status(400).json({ error: "Invalid auth0Id from token" });
-    }
-
-    const updateFields = {};
-    if (about !== undefined) updateFields.about = about;
-    if (fullName) updateFields.fullName = fullName;
-
-    const user = await User.findOneAndUpdate(
-      { auth0Id },
-      updateFields,
-      { new: true }
-    );
-
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
-
-    console.log("✅ Profile updated:", user._id);
-    return res.json(user);
-
-  } catch (err) {
-    console.error("❌ Error in /update-profile:", err);
-    res.status(500).json({ 
-      error: "Server error updating profile", 
-      details: err.message 
-    });
-  }
-});
-
-// ==================== UPLOAD PROFILE PIC ====================
-router.post("/profile-pic", authMiddleware, async (req, res) => {
-  try {
-    console.log("🔍 /profile-pic endpoint hit");
-    
-    const auth0Id = req.auth?.payload?.sub || req.auth?.sub;
-    
-    if (!auth0Id) {
-      return res.status(400).json({ error: "Invalid auth0Id from token" });
-    }
-
-    // Placeholder - implement actual file upload logic later
-    return res.json({ 
-      success: true, 
-      message: "Profile pic endpoint ready",
-      user: { profilePic: "https://example.com/default-pic.jpg" }
-    });
-
-  } catch (err) {
-    console.error("❌ Error in /profile-pic:", err);
-    res.status(500).json({ 
-      error: "Server error uploading profile pic", 
-      details: err.message 
-    });
-  }
-});
+//upload profile pic
+router.post("/profile-pic", authMiddleware, upload.single('profilePic'), uploadProfilePic);
 
 export default router;
