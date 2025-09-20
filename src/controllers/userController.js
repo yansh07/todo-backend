@@ -124,7 +124,6 @@ export const updateProfile = async (req, res) => {
 
 // 📌 Get Profile
 export const getProfile = async (req, res) => {
-export const getProfile = async (req, res) => {
   try {
     console.log("🔍 Getting user profile");
     
