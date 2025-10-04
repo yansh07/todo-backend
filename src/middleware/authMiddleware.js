@@ -20,14 +20,14 @@ const getKey = (header, callback) => {
     
     // Check if key exists and has the required properties
     if (!key) {
-      console.error("❌ No key found");
+      // console.error("❌ No key found");
       return callback(new Error("No signing key found"));
     }
 
     const signingKey = key.publicKey || key.rsaPublicKey;
     
     if (!signingKey) {
-      console.error("❌ No public key found in key object:", key);
+      // console.error("❌ No public key found in key object:", key);
       return callback(new Error("No public key found"));
     }
 
@@ -38,7 +38,7 @@ const getKey = (header, callback) => {
 export const authMiddleware = (req, res, next) => {
   const token = req.header("Authorization")?.replace("Bearer ", "");
   
-  console.log("🔐 AuthMiddleware: Token received, length:", token?.length || 0);
+  // console.log("🔐 AuthMiddleware: Token received, length:", token?.length || 0);
 
   if (!token) {
     return res.status(401).json({ error: "No token provided" });
@@ -55,15 +55,15 @@ export const authMiddleware = (req, res, next) => {
     },
     (err, decoded) => {
       if (err) {
-        console.error("❌ JWT verification failed:", err.message);
+        // console.error("❌ JWT verification failed:", err.message);
         return res.status(401).json({ 
           error: "Invalid token", 
           details: err.message 
         });
       }
 
-      console.log("✅ JWT verified successfully");
-      console.log("🔧 Decoded token:", JSON.stringify(decoded, null, 2));
+      // console.log("✅ JWT verified successfully");
+      // console.log("🔧 Decoded token:", JSON.stringify(decoded, null, 2));
 
       // Store decoded token in multiple formats for compatibility
       req.auth = {
@@ -72,7 +72,7 @@ export const authMiddleware = (req, res, next) => {
       };
       req.user = decoded;
 
-      console.log("🔧 Set req.auth.payload.sub:", decoded.sub);
+      // console.log("🔧 Set req.auth.payload.sub:", decoded.sub);
 
       next();
     }

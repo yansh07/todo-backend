@@ -125,7 +125,7 @@ export const updateProfile = async (req, res) => {
 // 📌 Get Profile
 export const getProfile = async (req, res) => {
   try {
-    console.log("🔍 Getting user profile");
+    // console.log("🔍 Getting user profile");
     
     const auth0Id = extractAuth0Id(req);
     
@@ -139,7 +139,7 @@ export const getProfile = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    console.log("✅ Profile fetched:", user._id);
+    // console.log("✅ Profile fetched:", user._id);
     return res.json(user);
 
   } catch (err) {
