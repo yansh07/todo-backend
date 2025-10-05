@@ -35,12 +35,12 @@ router.get("/profile", authMiddleware, getProfile);
 // verify user
 router.post("/verify-user", authMiddleware, async (req, res) => {
   try {
-    console.log("🔍 /verify-user endpoint hit");
+    // console.log("🔍 /verify-user endpoint hit");
     
     // DEBUG: Log the entire auth object to see what's available
-    console.log("🔧 req.auth:", JSON.stringify(req.auth, null, 2));
-    console.log("🔧 req.user:", JSON.stringify(req.user, null, 2));
-    console.log("🔧 req.body:", JSON.stringify(req.body, null, 2));
+    // console.log("🔧 req.auth:", JSON.stringify(req.auth, null, 2));
+    // console.log("🔧 req.user:", JSON.stringify(req.user, null, 2));
+    // console.log("🔧 req.body:", JSON.stringify(req.body, null, 2));
 
     // Try different ways to get the auth0 ID
     let auth0Id = req.auth?.payload?.sub || 
@@ -50,7 +50,7 @@ router.post("/verify-user", authMiddleware, async (req, res) => {
                   req.auth?.payload?.user_id ||
                   req.auth?.user_id;
 
-    console.log("🔧 Extracted auth0Id:", auth0Id);
+    // console.log("🔧 Extracted auth0Id:", auth0Id);
 
     const { email, name, picture } = req.body;
 
@@ -77,7 +77,7 @@ router.post("/verify-user", authMiddleware, async (req, res) => {
     let user = await User.findOne({ auth0Id });
 
     if (user) {
-      console.log("✅ Existing user found:", user._id);
+      // console.log("✅ Existing user found:", user._id);
       return res.json(user);
     }
 
